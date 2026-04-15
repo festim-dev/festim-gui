@@ -199,6 +199,8 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 
 ### 7.1 2D Permeation Through a Membrane
 
+See [the example FESTIM script](festim_example/2d_permeation.py)
+
 **Physics:**
 
 - 2D rectangular domain
