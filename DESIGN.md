@@ -82,6 +82,7 @@ FESTIM solves hydrogen (H, D, T) transport equations in materials, accounting fo
 
 ### 4.1 Primary Objectives
 
+1. Be a demo, a hook, for people to try out FESTIM with zero friction
 1. Allow users to **parametrise a FESTIM simulation** entirely through a graphical interface (geometry, mesh, species, boundary conditions, sources, temperature, solver settings, exports).
 2. **Generate a valid FESTIM Python script** that the user can run, inspect, download, and modify.
 3. **Run the simulation** from within the GUI.
@@ -200,29 +201,36 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 
 **Physics:**
 
-- 2D rectangular domain (e.g. tungsten membrane)
+- 2D rectangular domain
 - DOLFINx built-in rectangle mesh with user-defined `nx`, `ny`, and cell type (triangle or quadrilateral)
-- Temperature defined as a function of space and time (e.g. uniform 500 K)
-- Left boundary: Sievert's law or fixed concentration
-- Right boundary: Recombination flux or Dirichlet = 0
-- One species with diffusion, optionally one trap
+- Temperature defined as a function of space and time or a float (e.g. uniform 500 K)
+- Boundary conditions:
+    - Left boundary: Recombination and Dissociation flux
+    - Top boundary: Recombination flux or Dirichlet = 0
+    - Bottom and right boundaries: no flux
+- One mobile species (diffusion), one trapped species (immobile, doesn't diffuse) + implicit species for "empty traps"
 - Transient solve
+- Exports:
+    - concentration field(s) as VTX files
+    - Mobile particle flux at the left and top boundaries
+    - Integral of concentrations in the volume
 
 **Expected GUI actions:**
 
 1. User defines a rectangular 2D geometry with dimensions
-2. User sets mesh parameters: `nx`, `ny`, cell type (triangle / quadrilateral)
-3. User defines volume and surface subdomains
-4. User defines a species and its material properties (D₀, E_D)
-5. (Optional) User adds a trap (k₀, E_k, p₀, E_p, density)
-6. User sets boundary conditions on named surfaces
-7. User sets temperature as a function of space and time
-8. User configures settings (transient, final time, step size, tolerances)
-9. User selects exports (e.g. concentration field as VTX, surface flux as derived quantity)
-10. User clicks **"View Script"** → sees generated FESTIM Python code
-11. (Optional) User clicks **"Download Script"** → saves `.py` file locally
-12. User clicks **"Run"** → simulation executes, progress shown
-13. User sees results: concentration field plot with time slider + flux vs. time line plot
+1. User sets mesh parameters: `nx`, `ny`, cell type (triangle / quadrilateral)
+1. User defines materials with right properties (D₀, E_D)
+1. User defines volume (and assign materials) and surface subdomains
+1. User defines the species (mobile and immobile)
+1. (Optional) User adds a reaction between species (k₀, E_k, p₀, E_p)
+1. User sets boundary conditions on named surfaces
+1. User sets temperature as a function of space and time
+1. User configures settings (transient, final time, step size, tolerances)
+1. User selects exports (e.g. concentration field as VTX, surface flux as derived quantity)
+1. User clicks **"View Script"** → sees generated FESTIM Python code
+1. (Optional) User clicks **"Download Script"** → saves `.py` file locally
+1. User clicks **"Run"** → simulation executes, progress shown
+1. User sees results: concentration field plot with time slider + flux vs. time line plot
 
 **Reference script:** [Link to the equivalent FESTIM Python script in the examples repo]
 
@@ -230,14 +238,15 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 
 ## 8. Feature Requests (Prioritised)
 
+> Note: We could use GitHub project board to track these features!
+
 ### Phase 1 — Must Have
 
 - [ ] 2D rectangular geometry builder (DOLFINx built-in mesh)
   - User sets dimensions, `nx`, `ny`, cell type (triangle / quadrilateral)
-  - Definition of volume and surface subdomains
+- [ ] Material editor (diffusivity, solubility)
+- [ ] Definition of volume and surface subdomains (with locator functions, eg. y > 1)
 - [ ] Species definition
-- [ ] Material property editor (diffusivity, solubility)
-- [ ] Trap definition (multiple traps per material)
 - [ ] Boundary condition editor (Dirichlet, flux, Sievert's, recombination, custom)
 - [ ] Particle source editor (optional per simulation)
 - [ ] Chemical reaction editor (optional per simulation)
@@ -254,7 +263,7 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 
 ### Phase 2 — Should Have
 
-- [ ] 1D geometry support (single and multi-layer)
+- [ ] 1D geometry support (single and multi-layer, built in FESTIM)
 - [ ] 3D geometry support (DOLFINx built-in meshes)
 - [ ] Upload external mesh from GMSH (`.msh` file upload — no GMSH integration in GUI)
 - [ ] Mesh preview / visualisation
@@ -266,7 +275,7 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 - [ ] Plugin / extension architecture
 - [ ] Sensitivity analysis tools
 
-### Longer-Term (Out of Scope for This Collaboration)
+### Longer-Term (may be Out of Scope for This Collaboration)
 
 - Parameter sweeps / batch runs
 - Material property database integration
@@ -276,19 +285,19 @@ The MVP should be able to reproduce this canonical case end-to-end through the G
 
 ## 9. Design & UX Guidelines
 
-1. **Consistent with scientific conventions.** Use SI units by default. Label axes. Use standard notation (D₀, E_D, etc.).
+1. **Consistent with scientific conventions.** Use SI units by default. Label axes. Use standard FESTIM notation (D₀, E_D, etc.).
 
-2. **Validate early.** Warn users about invalid inputs (e.g., negative energies, missing BCs) before they try to run.
+1. **Validate early.** Try and warn users about invalid inputs before they try to run.
 
-3. **Show the script.** Always let the user see and copy the generated Python code — this is educational and builds trust.
+1. **Show the script.** Always let the user see and copy the generated Python code — this is educational and builds trust.
 
-4. **Responsive feedback.** When the user changes a parameter, update previews (mesh, schematic) immediately where possible.
+1. **Responsive feedback.** When the user changes a parameter, update previews (mesh, schematic) immediately where possible.
 
-5. **Be cautious with defaults.** While sensible defaults can accelerate setup, many parameters are strongly problem-dependent. Prefer leaving fields empty with clear guidance over pre-filling values that may mislead users. Where defaults are provided, they should be clearly flagged as illustrative, not recommended.
+1. **Be cautious with defaults.** While sensible defaults can accelerate setup, many parameters are strongly problem-dependent. Prefer leaving fields empty with clear guidance over pre-filling values that may mislead users. Where defaults are provided, they should be clearly flagged as illustrative, not recommended.
 
 ---
 
-## 10. Acceptance Criteria
+## 10. Acceptance Criteria: defining success
 
 The deliverable for each phase will be considered complete when:
 
