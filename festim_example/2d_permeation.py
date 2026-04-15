@@ -59,10 +59,40 @@ problem.interfaces = [
     F.Interface(id=5, subdomains=[volume_1, volume_2], penalty_term=100)
 ]
 
-# 5. Create species
+# 5a. Create species
 H = F.Species(name="H", mobile=True)
 H.subdomains = [volume_1, volume_2]
-problem.species = [H]
+
+H_trapped = F.Species(name="H_trapped", mobile=False)
+H_trapped.subdomains = [volume_1, volume_2]
+
+# NOTE this species could be ImplicitSpecies
+empty_trap = F.Species(name="empty_trap", mobile=False)
+empty_trap.subdomains = [volume_1, volume_2]
+
+problem.species = [H, H_trapped, empty_trap]
+
+# 5b. Create initial conditions
+
+# at t=0, c_empty_trap = 1 in volume 1
+ic_empty_trap = F.InitialConcentration(species=empty_trap, value=1.0, volume=volume_1)
+problem.initial_conditions = [ic_empty_trap]
+
+# NOTE by default other ICs are set to zero
+
+# 5c. Create reactions
+
+# H + empty_trap <-> H_trapped
+
+reac1 = F.Reaction(
+    reactant=[H, empty_trap],
+    product=[H_trapped],
+    k_0=0.1,
+    E_k=0.0,
+    p_0=0.05,
+    E_p=0.0,
+    volume=volume_1,
+)
 
 # 6. Create boundary conditions
 bc_1 = F.FixedConcentrationBC(subdomain=surface_1, value=1.0, species=H)
@@ -80,7 +110,7 @@ problem.settings = F.Settings(
 # 9. Exports
 concentration_field_exports = [
     F.VTXSpeciesExport(
-        filename=f"out/{spe.name}_{subdomain.id}.vtx", field=spe, subdomain=subdomain
+        filename=f"out/{spe.name}_{subdomain.id}.bp", field=spe, subdomain=subdomain
     )
     for spe in problem.species
     for subdomain in problem.subdomains

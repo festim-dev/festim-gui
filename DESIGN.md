@@ -224,6 +224,7 @@ See [the example FESTIM script](festim_example/2d_permeation.py)
 1. User defines materials with right properties (D₀, E_D)
 1. User defines volume (and assign materials) and surface subdomains
 1. User defines the species (mobile and immobile)
+1. User defines the initial conditions
 1. (Optional) User adds a reaction between species (k₀, E_k, p₀, E_p)
 1. User sets boundary conditions on named surfaces
 1. User sets temperature as a function of space and time
@@ -267,15 +268,16 @@ See [the example FESTIM script](festim_example/2d_permeation.py)
 
 - [ ] 1D geometry support (single and multi-layer, built in FESTIM)
 - [ ] 3D geometry support (DOLFINx built-in meshes)
-- [ ] Upload external mesh from GMSH (`.msh` file upload — no GMSH integration in GUI)
-- [ ] Mesh preview / visualisation
-- [ ] Template library with pre-built setups for common experiments (TDS, permeation, implantation) across 1D, 2D, and 3D examples
+- [ ] Upload external mesh from GMSH (`.msh` file upload — no GMSH integration in GUI) See [complete examples](https://festim-workshop.readthedocs.io/en/latest/content/meshes/mesh_gmsh.html#import-cad-in-gmsh)
+- [ ] Mesh preview / visualisation (including meshtags)
+- [ ] Template library with pre-built presets across 1D, 2D, and 3D examples (TDS, permeation, monoblock...)
 
 ### Phase 3 — Nice to Have
 
 - [ ] Import experimental tabular data for overlay on derived quantity plots
 - [ ] Plugin / extension architecture
 - [ ] Sensitivity analysis tools
+- [ ] Integration with heat transfer module in FESTIM
 
 ### Longer-Term (may be Out of Scope for This Collaboration)
 
