@@ -34,8 +34,8 @@ problem.mesh = F.Mesh(mesh_dolfinx, coordinate_system=coordinate_system)
 
 # 3. Create materials
 
-mat_1 = F.Material(name="mat_1", D_0=1.0, E_D=0.0, K_S_0=1.0, E_K_S=0.0)
-mat_2 = F.Material(name="mat_2", D_0=0.1, E_D=0.0, K_S_0=0.1, E_K_S=0.0)
+mat_1 = F.Material(name="mat_1", D_0=1.0, E_D=0.0, K_S_0=0.1, E_K_S=0.0)
+mat_2 = F.Material(name="mat_2", D_0=0.1, E_D=0.0, K_S_0=0.5, E_K_S=0.0)
 
 # 4. Create domains
 eps = 1e-3  # a small number to avoid numerical issues with the locator functions
@@ -87,12 +87,14 @@ problem.initial_conditions = [ic_empty_trap]
 reac1 = F.Reaction(
     reactant=[H, empty_trap],
     product=[H_trapped],
-    k_0=0.1,
+    k_0=0.05,
     E_k=0.0,
-    p_0=0.05,
+    p_0=0.1,
     E_p=0.0,
     volume=volume_1,
 )
+
+problem.reactions = [reac1]
 
 # 6. Create boundary conditions
 bc_1 = F.FixedConcentrationBC(subdomain=surface_1, value=1.0, species=H)
@@ -110,11 +112,11 @@ problem.settings = F.Settings(
 # 9. Exports
 concentration_field_exports = [
     F.VTXSpeciesExport(
-        filename=f"out/{spe.name}_{subdomain.id}.bp", field=spe, subdomain=subdomain
+        filename=f"out/vol_{subdomain.id}.bp",
+        field=problem.species,
+        subdomain=subdomain,
     )
-    for spe in problem.species
-    for subdomain in problem.subdomains
-    if subdomain in spe.subdomains
+    for subdomain in problem.volume_subdomains
 ]
 
 derived_quantities = [

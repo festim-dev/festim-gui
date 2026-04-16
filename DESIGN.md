@@ -217,6 +217,12 @@ See [the example FESTIM script](festim_example/2d_permeation.py)
     - Mobile particle flux at the left and top boundaries
     - Integral of concentrations in the volume
 
+**Example paraview viz**
+
+![image](festim_example/2d_permeation_paraview.png)
+
+The user would typically open the `.bp` files in paraview to visualise the different concentration fields (transient!).
+
 **Expected GUI actions:**
 
 1. User defines a rectangular 2D geometry with dimensions
