@@ -1,15 +1,16 @@
-import festim as F
-
-import dolfinx
-from mpi4py import MPI
-import numpy as np
 import warnings
 
+import dolfinx
+import festim as F
+import matplotlib.pyplot as plt
+import numpy as np
+from mpi4py import MPI
 
 if F.__version__ != "2.0b2.post2":
     warnings.warn(
         "This example was tested with festim version 2.0b2.post2. "
-        "If you are using a different version, the results may differ."
+        "If you are using a different version, the results may differ.",
+        stacklevel=2,
     )
 
 # 1. Create empty problem
@@ -132,7 +133,6 @@ problem.run()
 
 
 # post-processing: we can plot the results using the exports we created.
-import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
 for export in derived_quantities:

@@ -1,2 +1,5 @@
+from festim_gui.app import main
+
+
 def test_import():
-    from festim_gui.app import main  # noqa: F401
+    assert main is not None

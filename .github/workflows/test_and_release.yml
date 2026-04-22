@@ -2,9 +2,9 @@ name: Test and Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   pre-commit:
@@ -35,46 +35,34 @@ jobs:
       matrix:
         python-version: ["3.12"]
         config:
-        - {
-            name: "Linux",
-            os: ubuntu-latest
-          }
-        - {
-            name: "MacOSX",
-            os: macos-latest
-          }
-        - {
-            name: "Windows",
-            os: windows-latest
-          }
+          - { name: "Linux", os: ubuntu-latest }
+          - { name: "MacOSX", os: macos-latest }
+          - { name: "Windows", os: windows-latest }
 
     defaults:
       run:
         shell: bash
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        version: "0.8.12"
-        enable-cache: true
-    - name: Install and Run Tests
-      run: |
-        uv sync --dev
-        uv pip install -r tests/requirements.txt
-        uv run pytest -s ./tests
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.12"
+          enable-cache: true
+      - name: Install and Run Tests
+        run: |
+          uv sync --dev
+          uv pip install -r tests/requirements.txt
+          uv run pytest -s ./tests
 
   release:
-    needs: [
-      pre-commit,
-      pytest,
-    ]
+    needs: [pre-commit, pytest]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -92,7 +80,6 @@ jobs:
         uses: python-semantic-release/python-semantic-release@v10.5.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Generate artifact attestation for sdist and wheel
         if: steps.release.outputs.released == 'true'

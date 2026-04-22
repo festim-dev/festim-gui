@@ -23,17 +23,17 @@ Run the application
 
     festim-gui
 
-Developement setup
+Development setup
 ----------------------------------------
 
-We recommend using uv for setting up and managing a virtual environement for your development.
+We recommend using uv for setting up and managing a virtual environment for your development.
 
 .. code-block:: console
 
     # Create venv and install all dependencies
     uv sync --all-extras --dev
 
-    # Activate environement
+    # Activate environment
     source .venv/bin/activate
 
     # Install commit analysis
