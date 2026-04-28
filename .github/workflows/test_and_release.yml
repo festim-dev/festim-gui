@@ -63,7 +63,9 @@ jobs:
           uv run pytest -s ./tests
 
   release:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if:
+      github.event_name == 'workflow_dispatch' && github.ref ==
+      'refs/heads/main'
     needs: [pre-commit, pytest]
     runs-on: ubuntu-latest
     environment: release
