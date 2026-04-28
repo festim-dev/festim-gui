@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   pre-commit:
@@ -62,12 +63,14 @@ jobs:
           uv run pytest -s ./tests
 
   release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [pre-commit, pytest]
     runs-on: ubuntu-latest
     environment: release
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
       contents: write # IMPORTANT: mandatory for making GitHub Releases
+      attestations: write
 
     steps:
       - name: Checkout
