@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from . import mesh_page, problem_page
+from . import materials_page, mesh_page, problem_page
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,15 @@ PAGES = [
         init_state=mesh_page.init_state,
         build_ui=mesh_page.build_ui,
         script_lines=mesh_page.script_lines,
+    ),
+    Page(
+        id=materials_page.PAGE_ID,
+        title=materials_page.TITLE,
+        description=materials_page.DESCRIPTION,
+        state_keys=materials_page.STATE_KEYS,
+        init_state=materials_page.init_state,
+        build_ui=materials_page.build_ui,
+        script_lines=materials_page.script_lines,
     ),
 ]
 
