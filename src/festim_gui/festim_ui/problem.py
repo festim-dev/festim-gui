@@ -12,6 +12,8 @@ PROBLEM_TYPES = [
     "HydrogenTransportProblemDiscontinuous",
 ]
 
+STATE_KEYS = list(DEFAULTS.keys())
+
 
 @dataclass
 class ProblemModel:
@@ -50,3 +52,7 @@ def build_form() -> None:
                 density="comfortable",
                 variant="outlined",
             )
+
+
+def to_script_lines(model: ProblemModel) -> list[str]:
+    return [f"{model.var_name} = F.{model.klass}()"]

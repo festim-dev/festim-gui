@@ -4,8 +4,12 @@ from trame.ui.vuetify3 import SinglePageLayout
 from trame.widgets import html
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.components import build_navigation
-from festim_gui.pages import PAGES
+from festim_gui.components import (
+    build_navigation,
+    build_script_editor,
+    build_script_from_state,
+)
+from festim_gui.pages import FORM_STATE_KEYS, PAGES
 
 
 class FestimGUI(TrameApp):
@@ -17,9 +21,12 @@ class FestimGUI(TrameApp):
         self.state.page_index = 0
         self.state.page_title = PAGES[0].title
         self.state.page_description = PAGES[0].description
+        self.state.generated_script = ""
 
         for page in PAGES:
             page.init_state(self.state)
+
+        self._refresh_script()
 
         if self.server.hot_reload:
             self.server.controller.on_server_reload.add(self._build_ui)
@@ -32,6 +39,9 @@ class FestimGUI(TrameApp):
         self.state.page_title = page.title
         self.state.page_description = page.description
 
+    def _refresh_script(self) -> None:
+        self.state.generated_script = build_script_from_state(self.state)
+
     def previous_page(self):
         self.state.page_index = max(0, self.state.page_index - 1)
 
@@ -41,6 +51,11 @@ class FestimGUI(TrameApp):
     @change("page_index")
     def on_page_change(self, page_index, **_kwargs):
         self._set_page_metadata(page_index)
+        self._refresh_script()
+
+    @change(*FORM_STATE_KEYS)
+    def on_form_change(self, **_kwargs):
+        self._refresh_script()
 
     def _build_page_chips(self):
         with html.Div(classes="d-flex flex-wrap ga-2"):
@@ -61,17 +76,18 @@ class FestimGUI(TrameApp):
 
             with self.ui.content:
                 with v3.VContainer(fluid=True, classes="pa-4 fill-height"):
-                    with v3.VRow():
+                    with v3.VRow(classes="fill-height"):
                         with v3.VCol(
                             cols="12",
-                            md="8",
-                            lg="6",
+                            md="6",
                             classes="d-flex flex-column",
                             style="height: calc(100vh - 128px); min-height: 0;",
                         ):
                             with html.Div(classes="flex-grow-1 overflow-y-auto pr-1"):
                                 with v3.VCard(variant="outlined", classes="mb-4"):
-                                    with v3.VCardText(classes="d-flex flex-column ga-2"):
+                                    with v3.VCardText(
+                                        classes="d-flex flex-column ga-2"
+                                    ):
                                         html.Div(
                                             "{{ page_title }}",
                                             classes="text-h6 font-weight-medium",
@@ -92,6 +108,14 @@ class FestimGUI(TrameApp):
                                     on_prev=self.previous_page,
                                     on_next=self.next_page,
                                 )
+
+                        with v3.VCol(
+                            cols="12",
+                            md="6",
+                            classes="d-flex flex-column",
+                            style="height: calc(100vh - 128px); min-height: 0;",
+                        ):
+                            build_script_editor()
 
 
 def main():

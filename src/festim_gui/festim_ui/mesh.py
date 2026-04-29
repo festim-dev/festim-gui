@@ -14,6 +14,7 @@ DEFAULTS = {
 
 COORDINATE_SYSTEMS = ["cartesian", "cylindrical", "spherical"]
 CELL_TYPES = ["triangle", "quadrilateral"]
+STATE_KEYS = list(DEFAULTS.keys())
 
 
 def init_state(state) -> None:
@@ -97,3 +98,42 @@ def build_form() -> None:
                 variant="outlined",
                 density="comfortable",
             )
+
+
+def _as_float(value, fallback: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _as_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def to_script_lines(state, problem_var: str) -> list[str]:
+    nx = _as_int(state.mesh_nx, DEFAULTS["mesh_nx"])
+    ny = _as_int(state.mesh_ny, DEFAULTS["mesh_ny"])
+    xmin = _as_float(state.mesh_xmin, DEFAULTS["mesh_xmin"])
+    ymin = _as_float(state.mesh_ymin, DEFAULTS["mesh_ymin"])
+    xmax = _as_float(state.mesh_xmax, DEFAULTS["mesh_xmax"])
+    ymax = _as_float(state.mesh_ymax, DEFAULTS["mesh_ymax"])
+    coordinate_system = state.mesh_coordinate_system
+    cell_type = state.mesh_cell_type
+
+    return [
+        f"nx = {nx}",
+        f"ny = {ny}",
+        f'coordinate_system = "{coordinate_system}"',
+        f"lower_left = np.array([{xmin}, {ymin}])",
+        f"upper_right = np.array([{xmax}, {ymax}])",
+        f"cell_type = dolfinx.mesh.CellType.{cell_type}",
+        "",
+        f"{state.mesh_var} = dolfinx.mesh.create_rectangle(",
+        "    MPI.COMM_WORLD, [lower_left, upper_right], [nx, ny], cell_type=cell_type",
+        ")",
+        f"{problem_var}.mesh = F.Mesh({state.mesh_var}, coordinate_system=coordinate_system)",
+    ]
