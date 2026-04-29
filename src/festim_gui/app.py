@@ -72,3 +72,14 @@ class FestimGUI(TrameApp):
 
             # Footer
             # layout.footer.hide()
+
+# -------------------------------------------------------------------------
+# Standalone execution
+# -------------------------------------------------------------------------
+def main():
+    app = FestimGUI()
+    app.server.start(show_connection_info=False, open_browser=False)
+
+
+if __name__ == "__main__":
+    main()
