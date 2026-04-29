@@ -2,7 +2,7 @@ from trame.app import TrameApp
 from trame.ui.vuetify3 import SinglePageLayout
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.festim_ui import problem
+from festim_gui.pages import problem_page
 
 
 class FestimGUI(TrameApp):
@@ -10,7 +10,7 @@ class FestimGUI(TrameApp):
         super().__init__(server, client_type="vue3")
 
         self.state.trame__title = "FESTIM Script Modeler"
-        problem.init_state(self.state)
+        problem_page.init_state(self.state)
 
         if self.server.hot_reload:
             self.server.controller.on_server_reload.add(self._build_ui)
@@ -27,7 +27,7 @@ class FestimGUI(TrameApp):
                 with v3.VContainer(fluid=True, classes="pa-4"):
                     with v3.VRow():
                         with v3.VCol(cols="12", md="8", lg="6"):
-                            problem.build_form()
+                            problem_page.build_ui()
 
 
 def main():
