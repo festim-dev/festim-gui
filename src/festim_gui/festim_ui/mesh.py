@@ -1,5 +1,7 @@
 from trame.widgets import vuetify3 as v3
 
+from .utils import as_float, as_int, set_missing_state_defaults
+
 DEFAULTS = {
     "mesh_var": "mesh_dolfinx",
     "mesh_nx": 20,
@@ -18,9 +20,7 @@ STATE_KEYS = list(DEFAULTS.keys())
 
 
 def init_state(state) -> None:
-    for key, value in DEFAULTS.items():
-        if not state.has(key):
-            state[key] = value
+    set_missing_state_defaults(state, DEFAULTS)
 
 
 def build_form() -> None:
@@ -100,27 +100,13 @@ def build_form() -> None:
             )
 
 
-def _as_float(value, fallback: float) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return fallback
-
-
-def _as_int(value, fallback: int) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return fallback
-
-
 def to_script_lines(state, problem_var: str) -> list[str]:
-    nx = _as_int(state.mesh_nx, DEFAULTS["mesh_nx"])
-    ny = _as_int(state.mesh_ny, DEFAULTS["mesh_ny"])
-    xmin = _as_float(state.mesh_xmin, DEFAULTS["mesh_xmin"])
-    ymin = _as_float(state.mesh_ymin, DEFAULTS["mesh_ymin"])
-    xmax = _as_float(state.mesh_xmax, DEFAULTS["mesh_xmax"])
-    ymax = _as_float(state.mesh_ymax, DEFAULTS["mesh_ymax"])
+    nx = as_int(state.mesh_nx, DEFAULTS["mesh_nx"])
+    ny = as_int(state.mesh_ny, DEFAULTS["mesh_ny"])
+    xmin = as_float(state.mesh_xmin, DEFAULTS["mesh_xmin"])
+    ymin = as_float(state.mesh_ymin, DEFAULTS["mesh_ymin"])
+    xmax = as_float(state.mesh_xmax, DEFAULTS["mesh_xmax"])
+    ymax = as_float(state.mesh_ymax, DEFAULTS["mesh_ymax"])
     coordinate_system = state.mesh_coordinate_system
     cell_type = state.mesh_cell_type
 

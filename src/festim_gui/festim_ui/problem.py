@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from trame.widgets import vuetify3 as v3
 
+from .utils import set_missing_state_defaults
+
 DEFAULTS = {
     "problem_var": "problem",
     "problem_class": "HydrogenTransportProblemDiscontinuous",
@@ -22,10 +24,7 @@ class ProblemModel:
 
 
 def init_state(state) -> None:
-    if not state.has("problem_var"):
-        state.problem_var = DEFAULTS["problem_var"]
-    if not state.has("problem_class"):
-        state.problem_class = DEFAULTS["problem_class"]
+    set_missing_state_defaults(state, DEFAULTS)
 
 
 def from_state(state) -> ProblemModel:
