@@ -20,7 +20,7 @@ HEADER_LINES = [
 
 def build_script_from_state(state, pages=None) -> str:
     active_pages = pages or PAGES
-    lines = list(HEADER_LINES)
+    lines = list(HEADER_LINES) if pages is None else []
     for page in active_pages:
         lines.extend(page.script_lines(state))
         lines.append("")

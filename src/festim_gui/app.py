@@ -39,7 +39,9 @@ class FestimGUI(TrameApp):
         self.state.page_description = page.description
 
     def _refresh_script(self) -> None:
-        self.state.generated_script = build_script_from_state(self.state, PAGES)
+        self.state.generated_script = build_script_from_state(
+            self.state, [PAGES[self.state.page_index]]
+        )
 
     def previous_page(self):
         self.state.page_index = max(0, self.state.page_index - 1)
