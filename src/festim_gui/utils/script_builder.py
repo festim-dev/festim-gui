@@ -18,9 +18,10 @@ HEADER_LINES = [
 ]
 
 
-def build_script_from_state(state) -> str:
+def build_script_from_state(state, pages=None) -> str:
+    active_pages = pages or PAGES
     lines = list(HEADER_LINES)
-    for page in PAGES:
+    for page in active_pages:
         lines.extend(page.script_lines(state))
         lines.append("")
 

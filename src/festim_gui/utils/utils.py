@@ -1,6 +1,39 @@
 from typing import Any
 
-from .types import as_int
+
+def as_float(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def as_int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def as_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "on"}:
+        return True
+    if text in {"0", "false", "no", "off"}:
+        return False
+
+    return default
+
+
+def set_missing_state_defaults(state, defaults: dict[str, Any]) -> None:
+    for key, value in defaults.items():
+        if not state.has(key):
+            state[key] = value
 
 
 def _resolve_default(value: Any, index: int) -> Any:

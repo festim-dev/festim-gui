@@ -1,19 +1,20 @@
-from festim_gui.festim_ui import mesh, problem
-
-PAGE_ID = "mesh"
-TITLE = "2. Mesh"
-DESCRIPTION = "Configure mesh geometry and metadata."
-STATE_KEYS = mesh.STATE_KEYS
+from festim_gui.festim_ui.mesh import MeshComponent
+from festim_gui.festim_ui.problem import ProblemComponent
+from festim_gui.pages.page import Page
 
 
-def init_state(state):
-    mesh.init_state(state)
+class MeshPage(Page):
+    id = "mesh"
+    title = "2. Mesh"
+    description = "Configure mesh geometry and metadata."
+    state_keys = MeshComponent.state_keys
 
+    def init_state(self, state) -> None:
+        MeshComponent.init_state(state)
 
-def build_ui():
-    mesh.build_form()
+    def build_ui(self) -> None:
+        MeshComponent()
 
-
-def script_lines(state):
-    problem_var = problem.from_state(state).var_name
-    return ["# 2. Create mesh", *mesh.to_script_lines(state, problem_var)]
+    def script_lines(self, state) -> list[str]:
+        problem_var = ProblemComponent.from_state(state).var_name
+        return ["# 2. Create mesh", *MeshComponent.to_script_lines(state, problem_var)]

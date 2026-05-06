@@ -1,15 +1,12 @@
 from trame.app import TrameApp
 from trame.decorators import change
 from trame.ui.vuetify3 import SinglePageLayout
-from trame.widgets import html
+from trame.widgets import client, html
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.components import (
-    build_navigation,
-    build_script_editor,
-    build_script_from_state,
-)
+from festim_gui.components import Navigation, PageNavigationBar, ScriptEditor
 from festim_gui.pages import FORM_STATE_KEYS, PAGES
+from festim_gui.utils.script_builder import build_script_from_state
 
 
 class FestimGUI(TrameApp):
@@ -19,6 +16,7 @@ class FestimGUI(TrameApp):
         self.state.trame__title = "FESTIM Script Modeler"
         self.state.total_pages = len(PAGES)
         self.state.page_index = 0
+        self.state.page_name = PAGES[0].template_name
         self.state.page_title = PAGES[0].title
         self.state.page_description = PAGES[0].description
         self.state.generated_script = ""
@@ -36,11 +34,12 @@ class FestimGUI(TrameApp):
     def _set_page_metadata(self, page_index: int) -> None:
         safe_index = max(0, min(page_index, len(PAGES) - 1))
         page = PAGES[safe_index]
+        self.state.page_name = page.template_name
         self.state.page_title = page.title
         self.state.page_description = page.description
 
     def _refresh_script(self) -> None:
-        self.state.generated_script = build_script_from_state(self.state)
+        self.state.generated_script = build_script_from_state(self.state, PAGES)
 
     def previous_page(self):
         self.state.page_index = max(0, self.state.page_index - 1)
@@ -57,17 +56,13 @@ class FestimGUI(TrameApp):
     def on_form_change(self, **_kwargs):
         self._refresh_script()
 
-    def _build_page_chips(self):
-        with html.Div(classes="d-flex flex-wrap ga-2"):
-            for index, page in enumerate(PAGES):
-                v3.VChip(
-                    f"{page.title}",
-                    variant="outlined",
-                    color=(f"page_index === {index} ? 'primary' : 'default'",),
-                    classes="text-caption",
-                )
+    def _build_page_templates(self):
+        for page in PAGES:
+            page.mount_template(self.server)
 
     def _build_ui(self, *_args, **_kwargs):
+        self._build_page_templates()
+
         with SinglePageLayout(self.server) as self.ui:
             self.ui.title.set_text("FESTIM Script Builder")
             with self.ui.toolbar:
@@ -84,26 +79,13 @@ class FestimGUI(TrameApp):
                             style="height: calc(100vh - 128px); min-height: 0;",
                         ):
                             with html.Div(classes="flex-grow-1 overflow-y-auto pr-1"):
-                                with v3.VCard(variant="outlined", classes="mb-4"):
-                                    with v3.VCardText(
-                                        classes="d-flex flex-column ga-2"
-                                    ):
-                                        html.Div(
-                                            "{{ page_title }}",
-                                            classes="text-h6 font-weight-medium",
-                                        )
-                                        html.Div(
-                                            "{{ page_description }}",
-                                            classes="text-body-2 text-medium-emphasis",
-                                        )
-                                        self._build_page_chips()
-
-                                for index, page in enumerate(PAGES):
-                                    with html.Div(v_if=f"page_index === {index}"):
-                                        page.build_ui()
+                                PageNavigationBar(PAGES)
+                                client.ServerTemplate(
+                                    name=("page_name", PAGES[0].template_name)
+                                )
 
                             with html.Div(classes="pt-3 mt-auto"):
-                                build_navigation(
+                                Navigation(
                                     total_pages=len(PAGES),
                                     on_prev=self.previous_page,
                                     on_next=self.next_page,
@@ -115,7 +97,7 @@ class FestimGUI(TrameApp):
                             classes="d-flex flex-column",
                             style="height: calc(100vh - 128px); min-height: 0;",
                         ):
-                            build_script_editor()
+                            ScriptEditor()
 
 
 def main():

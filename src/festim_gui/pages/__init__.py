@@ -1,48 +1,10 @@
-from dataclasses import dataclass
-from typing import Callable
-
 from . import materials_page, mesh_page, problem_page
-
-
-@dataclass(frozen=True)
-class Page:
-    id: str
-    title: str
-    description: str
-    state_keys: list[str]
-    init_state: Callable
-    build_ui: Callable
-    script_lines: Callable
-
+from .page import Page
 
 PAGES = [
-    Page(
-        id=problem_page.PAGE_ID,
-        title=problem_page.TITLE,
-        description=problem_page.DESCRIPTION,
-        state_keys=problem_page.STATE_KEYS,
-        init_state=problem_page.init_state,
-        build_ui=problem_page.build_ui,
-        script_lines=problem_page.script_lines,
-    ),
-    Page(
-        id=mesh_page.PAGE_ID,
-        title=mesh_page.TITLE,
-        description=mesh_page.DESCRIPTION,
-        state_keys=mesh_page.STATE_KEYS,
-        init_state=mesh_page.init_state,
-        build_ui=mesh_page.build_ui,
-        script_lines=mesh_page.script_lines,
-    ),
-    Page(
-        id=materials_page.PAGE_ID,
-        title=materials_page.TITLE,
-        description=materials_page.DESCRIPTION,
-        state_keys=materials_page.STATE_KEYS,
-        init_state=materials_page.init_state,
-        build_ui=materials_page.build_ui,
-        script_lines=materials_page.script_lines,
-    ),
+    problem_page.ProblemPage(),
+    mesh_page.MeshPage(),
+    materials_page.MaterialsPage(),
 ]
 
 FORM_STATE_KEYS = list(dict.fromkeys(key for page in PAGES for key in page.state_keys))

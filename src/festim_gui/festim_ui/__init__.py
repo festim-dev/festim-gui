@@ -1,5 +1,11 @@
 """Atomic FESTIM UI components."""
 
-from . import material, mesh, problem
+from .material import MaterialComponent
+from .mesh import MeshComponent
+from .problem import ProblemComponent
 
-__all__ = ["material", "mesh", "problem"]
+__all__ = [
+    "MaterialComponent",
+    "MeshComponent",
+    "ProblemComponent",
+]
