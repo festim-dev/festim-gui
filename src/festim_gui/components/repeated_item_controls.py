@@ -7,9 +7,7 @@ class RepeatedItemControls(v3.VRow):
 
         with self:
             with v3.VCol(cols="12"):
-                with v3.VBtnToggle(
-                    density="compact", divided=True, variant="outlined"
-                ):
+                with v3.VBtnToggle(density="compact", divided=True, variant="outlined"):
                     v3.VBtn(
                         "Add",
                         prepend_icon="mdi-plus",
