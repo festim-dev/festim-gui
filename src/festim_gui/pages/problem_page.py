@@ -28,18 +28,12 @@ class ProblemPage(Page):
         super().__init__(server)
         self.config = ProblemPageState(server)
         self.config.watch(
-            ["problem_var", "problem_class"], self._on_state_change, sync=True
+            ["problem_var", "problem_class"], self.notify_script_change, sync=True
         )
 
     @property
     def problem_var(self) -> str:
         return self.config.problem_var
-
-    def _on_state_change(self, *_args):
-        self.notify_script_change()
-
-    def _on_field_update(self, *_args, **_kwargs):
-        self.notify_script_change()
 
     def build_ui(self):
         with v3.VCard(variant="outlined"):
@@ -50,7 +44,7 @@ class ProblemPage(Page):
                         label="Python variable",
                         density="comfortable",
                         variant="outlined",
-                        update_modelValue=self._on_field_update,
+                        update_modelValue=self.notify_script_change,
                     )
                     v3.VSelect(
                         v_model="problem_config.problem_class",
@@ -58,7 +52,7 @@ class ProblemPage(Page):
                         label="FESTIM problem class",
                         density="comfortable",
                         variant="outlined",
-                        update_modelValue=self._on_field_update,
+                        update_modelValue=self.notify_script_change,
                     )
 
     def script_lines(self) -> list[str]:

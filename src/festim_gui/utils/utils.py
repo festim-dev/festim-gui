@@ -28,3 +28,29 @@ def as_bool(value: Any, default: bool) -> bool:
         return False
 
     return default
+
+
+def comma_separated_list_expr(value: str) -> str:
+    items = [item.strip() for item in str(value).split(",") if item.strip()]
+    return f"[{', '.join(items)}]"
+
+
+def resolve_template_row(defaults: dict[str, Any], index: int) -> dict[str, Any]:
+    row = {}
+    for key, value in defaults.items():
+        if callable(value):
+            row[key] = value(index)
+        elif isinstance(value, str):
+            row[key] = value.format(i=index + 1)
+        else:
+            row[key] = value
+    return row
+
+
+def build_initial_rows(
+    defaults: dict[str, Any], initial_items: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    return [
+        {**resolve_template_row(defaults, idx), **row}
+        for idx, row in enumerate(initial_items)
+    ]

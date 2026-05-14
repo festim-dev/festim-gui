@@ -43,13 +43,7 @@ class MeshPage(Page):
         super().__init__(server)
         self._problem_page = problem_page
         self.config = MeshPageState(server)
-        self.config.watch(WATCH_FIELDS, self._on_state_change, sync=True)
-
-    def _on_state_change(self, *_args):
-        self.notify_script_change()
-
-    def _on_field_update(self, *_args, **_kwargs):
-        self.notify_script_change()
+        self.config.watch(WATCH_FIELDS, self.notify_script_change, sync=True)
 
     def build_ui(self) -> None:
         with v3.VCard(variant="outlined"):
@@ -60,7 +54,7 @@ class MeshPage(Page):
                         label="dolfinx mesh variable",
                         variant="outlined",
                         density="comfortable",
-                        update_modelValue=self._on_field_update,
+                        update_modelValue=self.notify_script_change,
                     )
                     with v3.VRow(classes="ga-0"):
                         with v3.VCol(cols="6"):
@@ -70,7 +64,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                         with v3.VCol(cols="6"):
                             v3.VTextField(
@@ -79,7 +73,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                     with v3.VRow(classes="ga-0"):
                         with v3.VCol(cols="6"):
@@ -89,7 +83,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                         with v3.VCol(cols="6"):
                             v3.VTextField(
@@ -98,7 +92,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                     with v3.VRow(classes="ga-0"):
                         with v3.VCol(cols="6"):
@@ -108,7 +102,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                         with v3.VCol(cols="6"):
                             v3.VTextField(
@@ -117,7 +111,7 @@ class MeshPage(Page):
                                 type="number",
                                 variant="outlined",
                                 density="comfortable",
-                                update_modelValue=self._on_field_update,
+                                update_modelValue=self.notify_script_change,
                             )
                     v3.VSelect(
                         v_model="mesh_config.mesh_coordinate_system",
@@ -125,7 +119,7 @@ class MeshPage(Page):
                         label="Coordinate system",
                         variant="outlined",
                         density="comfortable",
-                        update_modelValue=self._on_field_update,
+                        update_modelValue=self.notify_script_change,
                     )
                     v3.VSelect(
                         v_model="mesh_config.mesh_cell_type",
@@ -133,7 +127,7 @@ class MeshPage(Page):
                         label="Cell type",
                         variant="outlined",
                         density="comfortable",
-                        update_modelValue=self._on_field_update,
+                        update_modelValue=self.notify_script_change,
                     )
 
     def script_lines(self) -> list[str]:

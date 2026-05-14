@@ -3,7 +3,7 @@ from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
-from festim_gui.utils import as_float
+from festim_gui.utils import as_float, build_initial_rows, resolve_template_row
 
 MATERIAL_DEFAULTS = {
     "var": "mat_{i}",
@@ -19,22 +19,12 @@ INITIAL_MATERIALS = [
 ]
 
 
-def _default_material_row(index: int) -> dict[str, float | str]:
-    return {
-        key: value.format(i=index + 1) if isinstance(value, str) else value
-        for key, value in MATERIAL_DEFAULTS.items()
-    }
-
-
-def _initial_material_rows() -> list[dict[str, float | str]]:
-    return [
-        {**_default_material_row(idx), **initial_row}
-        for idx, initial_row in enumerate(INITIAL_MATERIALS)
-    ]
-
-
 class MaterialsPageState(StateDataModel):
-    material_rows = Sync(list, _initial_material_rows, client_deep_reactive=True)
+    material_rows = Sync(
+        list,
+        lambda: build_initial_rows(MATERIAL_DEFAULTS, INITIAL_MATERIALS),
+        client_deep_reactive=True,
+    )
 
 
 class MaterialsPage(Page):
@@ -45,17 +35,11 @@ class MaterialsPage(Page):
     def __init__(self, server):
         super().__init__(server)
         self.config = MaterialsPageState(server)
-        self.config.watch(["material_rows"], self._on_state_change, sync=True)
-
-    def _on_state_change(self, *_args):
-        self.notify_script_change()
-
-    def _on_field_update(self, *_args, **_kwargs):
-        self.notify_script_change()
+        self.config.watch(["material_rows"], self.notify_script_change, sync=True)
 
     def add_material(self, *_args, **_kwargs):
         rows = list(self.config.material_rows)
-        rows.append(_default_material_row(len(rows)))
+        rows.append(resolve_template_row(MATERIAL_DEFAULTS, len(rows)))
         self.config.material_rows = rows
 
     def remove_material(self, *_args, **_kwargs):
@@ -86,7 +70,7 @@ class MaterialsPage(Page):
                                         label="Variable",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
                                 with v3.VCol(cols="6"):
                                     v3.VTextField(
@@ -94,7 +78,7 @@ class MaterialsPage(Page):
                                         label="name",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
                             with v3.VRow(classes="ga-0"):
                                 with v3.VCol(cols="6"):
@@ -104,7 +88,7 @@ class MaterialsPage(Page):
                                         type="number",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
                                 with v3.VCol(cols="6"):
                                     v3.VTextField(
@@ -113,7 +97,7 @@ class MaterialsPage(Page):
                                         type="number",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
                             with v3.VRow(classes="ga-0"):
                                 with v3.VCol(cols="6"):
@@ -123,7 +107,7 @@ class MaterialsPage(Page):
                                         type="number",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
                                 with v3.VCol(cols="6"):
                                     v3.VTextField(
@@ -132,18 +116,18 @@ class MaterialsPage(Page):
                                         type="number",
                                         variant="outlined",
                                         density="compact",
-                                        update_modelValue=self._on_field_update,
+                                        update_modelValue=self.notify_script_change,
                                     )
 
     def script_lines(self) -> list[str]:
         lines = ["# 3. Create materials"]
         rows = self.config.material_rows
         if not rows:
-            rows = [_default_material_row(0)]
+            rows = [resolve_template_row(MATERIAL_DEFAULTS, 0)]
 
         for idx, row in enumerate(rows):
             row_dict = row if isinstance(row, dict) else {}
-            defaults = _default_material_row(idx)
+            defaults = resolve_template_row(MATERIAL_DEFAULTS, idx)
             var_name = str(row_dict.get("var", defaults["var"]))
             name = str(row_dict.get("name", defaults["name"]))
             d_0 = as_float(

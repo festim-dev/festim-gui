@@ -20,7 +20,7 @@ class Page(TrameComponent, ABC):
     def register_script_change_callback(self, callback) -> None:
         self._script_change_callback = callback
 
-    def notify_script_change(self) -> None:
+    def notify_script_change(self, *_args, **_kwargs) -> None:
         if self._script_change_callback is not None:
             self._script_change_callback()
 
