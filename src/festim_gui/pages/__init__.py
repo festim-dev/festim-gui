@@ -1,12 +1,12 @@
 from . import materials_page, mesh_page, problem_page
 from .page import Page
 
-PAGES = [
-    problem_page.ProblemPage(),
-    mesh_page.MeshPage(),
-    materials_page.MaterialsPage(),
-]
 
-FORM_STATE_KEYS = list(dict.fromkeys(key for page in PAGES for key in page.state_keys))
+def create_pages(server):
+    problem = problem_page.ProblemPage(server)
+    mesh = mesh_page.MeshPage(server, problem)
+    materials = materials_page.MaterialsPage(server)
+    return [problem, mesh, materials]
 
-__all__ = ["FORM_STATE_KEYS", "PAGES", "Page"]
+
+__all__ = ["Page", "create_pages"]

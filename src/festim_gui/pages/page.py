@@ -1,34 +1,33 @@
 from abc import ABC, abstractmethod
 
+from trame.app import TrameComponent
 from trame.ui.html import DivLayout
 
 
-class Page(ABC):
+class Page(TrameComponent, ABC):
     id = ""
     title = ""
     description = ""
-    state_keys = ()
 
-    def __init__(self):
-        self._layout = None
+    def __init__(self, server):
+        super().__init__(server)
+        self._script_change_callback = None
 
-    @property
-    def template_name(self) -> str:
-        return self.id
-
-    def mount_template(self, server) -> None:
-        with DivLayout(server, template_name=self.template_name) as layout:
+    def mount_template(self) -> None:
+        with DivLayout(self.server, template_name=self.id):
             self.build_ui()
-        self._layout = layout
 
-    @abstractmethod
-    def init_state(self, state) -> None:
-        pass
+    def register_script_change_callback(self, callback) -> None:
+        self._script_change_callback = callback
+
+    def notify_script_change(self) -> None:
+        if self._script_change_callback is not None:
+            self._script_change_callback()
 
     @abstractmethod
     def build_ui(self) -> None:
         pass
 
     @abstractmethod
-    def script_lines(self, state) -> list[str]:
+    def script_lines(self) -> list[str]:
         pass

@@ -47,5 +47,6 @@ class Navigation(v3.VCard):
                 )
                 v3.VSpacer()
                 html.Div(
-                    "{{ page_index + 1 }} / {{ total_pages }}", classes="text-caption"
+                    f"{{{{ page_index + 1 }}}} / {total_pages}",
+                    classes="text-caption",
                 )

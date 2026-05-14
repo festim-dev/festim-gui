@@ -1,5 +1,3 @@
-from festim_gui.pages import PAGES
-
 HEADER_LINES = [
     "import warnings",
     "",
@@ -18,11 +16,10 @@ HEADER_LINES = [
 ]
 
 
-def build_script_from_state(state, pages=None) -> str:
-    active_pages = pages or PAGES
-    lines = list(HEADER_LINES) if pages is None else []
-    for page in active_pages:
-        lines.extend(page.script_lines(state))
+def build_script(pages, include_header: bool = False) -> str:
+    lines = list(HEADER_LINES) if include_header else []
+    for page in pages:
+        lines.extend(page.script_lines())
         lines.append("")
 
     while lines and lines[-1] == "":

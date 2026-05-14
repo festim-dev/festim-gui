@@ -7,10 +7,11 @@ authors = [
 ]
 dependencies = [
     "trame>=3.12",
+    "trame-dataclass>=2.0.5",
     "trame-vuetify",
     "trame-vtk",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.rst"
 license = {text = "MIT License"}
 keywords = ["Python", "Interactive", "Web", "Application", "Framework"]
