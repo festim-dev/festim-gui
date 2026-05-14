@@ -7,6 +7,7 @@ from .mesh_page import MeshPage
 from .page import Page
 from .problem_page import ProblemPage
 from .reactions_page import ReactionsPage
+from .run_page import RunPage
 from .settings_page import SettingsPage
 from .species_page import SpeciesPage
 from .temperature_page import TemperaturePage
@@ -24,6 +25,7 @@ def create_pages(server):
     temperature = TemperaturePage(server, problem)
     settings = SettingsPage(server, problem)
     exports = ExportsPage(server, problem)
+    run = RunPage(server, problem)
     return [
         problem,
         mesh,
@@ -36,6 +38,7 @@ def create_pages(server):
         temperature,
         settings,
         exports,
+        run,
     ]
 
 

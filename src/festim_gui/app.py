@@ -23,6 +23,7 @@ class FestimGUI(TrameApp):
         self.state.page_name = self.pages[0].id
         self.state.page_title = self.pages[0].title
         self.state.page_description = self.pages[0].description
+        self.state.script_view_mode = "snippet"
         self.state.generated_script = ""
 
         self._refresh_script()
@@ -41,6 +42,11 @@ class FestimGUI(TrameApp):
 
     def _refresh_script(self) -> None:
         page = self.pages[self.state.page_index]
+        show_full_script = self.state.script_view_mode == "full"
+        if show_full_script:
+            self.state.generated_script = build_script(self.pages, include_header=True)
+            return
+
         self.state.generated_script = build_script([page], include_header=False)
 
     def previous_page(self):
@@ -52,6 +58,15 @@ class FestimGUI(TrameApp):
     @change("page_index")
     def on_page_change(self, page_index, **_kwargs):
         self._set_page_metadata(page_index)
+        page = self.pages[max(0, min(page_index, len(self.pages) - 1))]
+        if page.id == "run":
+            self.state.script_view_mode = "full"
+        else:
+            self.state.script_view_mode = "snippet"
+        self._refresh_script()
+
+    @change("script_view_mode")
+    def on_script_view_mode_change(self, **_kwargs):
         self._refresh_script()
 
     def _build_page_templates(self):
