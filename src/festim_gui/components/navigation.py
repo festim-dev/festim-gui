@@ -23,6 +23,7 @@ class PageNavigationBar(v3.VCard):
                             variant="outlined",
                             color=(f"page_index === {index} ? 'primary' : 'default'",),
                             classes="text-caption",
+                            click=f"page_index = {index}",
                         )
 
 
