@@ -56,6 +56,25 @@ For running tests and checks, you can run ``nox``.
     # tests
     nox -s tests
 
+Docker
+----------------------------------------
+
+Build the Docker image from the repository root:
+
+.. code-block:: console
+
+    docker build -t festim-gui .
+
+Run the image and expose it on port ``8080``:
+
+.. code-block:: console
+
+    docker run -it --rm -p 8080:80 festim-gui
+
+Then open ``http://localhost:8080/`` in your browser.
+
+Docker setup files are located under ``docker/setup``.
+
 Professional Support
 ----------------------------------------
 
