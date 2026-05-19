@@ -73,7 +73,7 @@ Run the image and expose it on port ``8080``:
 
 Then open ``http://localhost:8080/`` in your browser.
 
-Docker setup files are located under ``docker/setup``.
+Docker setup files are located under ``setup/``.
 
 Professional Support
 ----------------------------------------

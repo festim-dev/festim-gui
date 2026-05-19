@@ -8,11 +8,11 @@ ENV TRAME_CLIENT_TYPE=vue3
 # !!! Using path from root directory !!!
 # -------------------------------------------------------------------
 # Copy the local app and the deploy directory when using local
-# directory (./docker/setup/initialize.sh) instead of
-# a published package (./docker/setup/requirements.txt)
+# directory (./setup/initialize.sh) instead of
+# a published package (./setup/requirements.txt)
 # => use one or the other
 COPY --chown=trame-user:trame-user . /local-app
-COPY --chown=trame-user:trame-user ./docker/setup /deploy/setup
+COPY --chown=trame-user:trame-user ./setup /deploy/setup
 # -------------------------------------------------------------------
 
 RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
