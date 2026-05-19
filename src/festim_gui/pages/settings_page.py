@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.pages.page import Page
 from festim_gui.utils import as_bool, as_float
@@ -26,70 +27,75 @@ class SettingsPage(Page):
     title = "8. Settings"
     description = "Set solver/runtime settings via F.Settings."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_settings")
         self.config = SettingsPageState(server)
         self.config.watch(
             ["atol", "rtol", "transient", "stepsize", "final_time"],
             self.notify_script_change,
             sync=True,
         )
+        self.build_ui()
 
     def build_ui(self) -> None:
-        with self.config.provide_as("settings_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="settings_config.atol",
-                                label="atol",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="settings_config.rtol",
-                                label="rtol",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("settings_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="settings_config.atol",
+                                    label="atol",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="settings_config.rtol",
+                                    label="rtol",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
 
-                    v3.VSwitch(
-                        v_model="settings_config.transient",
-                        label="transient",
-                        color="primary",
-                        hide_details=True,
-                        update_modelValue=self.notify_script_change,
-                    )
+                        v3.VSwitch(
+                            v_model="settings_config.transient",
+                            label="transient",
+                            color="primary",
+                            hide_details=True,
+                            update_modelValue=self.notify_script_change,
+                        )
 
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="settings_config.stepsize",
-                                label="stepsize",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="settings_config.final_time",
-                                label="final_time",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="settings_config.stepsize",
+                                    label="stepsize",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="settings_config.final_time",
+                                    label="final_time",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         atol = as_float(self.config.atol, DEFAULTS["atol"])
         rtol = as_float(self.config.rtol, DEFAULTS["rtol"])
         transient = as_bool(self.config.transient, DEFAULTS["transient"])

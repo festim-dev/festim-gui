@@ -14,31 +14,19 @@ from .temperature_page import TemperaturePage
 
 
 def create_pages(server):
-    problem = ProblemPage(server)
-    mesh = MeshPage(server, problem)
-    materials = MaterialsPage(server)
-    domains = DomainsPage(server, problem)
-    species = SpeciesPage(server, problem)
-    initial_conditions = InitialConditionsPage(server, problem)
-    reactions = ReactionsPage(server, problem)
-    boundary_conditions = BoundaryConditionsPage(server, problem)
-    temperature = TemperaturePage(server, problem)
-    settings = SettingsPage(server, problem)
-    exports = ExportsPage(server, problem)
-    run = RunPage(server, problem)
     return [
-        problem,
-        mesh,
-        materials,
-        domains,
-        species,
-        initial_conditions,
-        reactions,
-        boundary_conditions,
-        temperature,
-        settings,
-        exports,
-        run,
+        ProblemPage(server).activate(),
+        MeshPage(server),
+        MaterialsPage(server),
+        DomainsPage(server),
+        SpeciesPage(server),
+        InitialConditionsPage(server),
+        ReactionsPage(server),
+        BoundaryConditionsPage(server),
+        TemperaturePage(server),
+        SettingsPage(server),
+        ExportsPage(server),
+        RunPage(server),
     ]
 
 

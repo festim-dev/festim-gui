@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -97,15 +98,15 @@ class DomainsPage(Page):
     title = "4. Domains"
     description = "Create volume/surface subdomains and interfaces."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_domains")
         self.config = DomainsPageState(server)
         self.config.watch(
             ["domains_eps", "volume_rows", "surface_rows", "interface_rows"],
             self.notify_script_change,
             sync=True,
         )
+        self.build_ui()
 
     def _add_row(self, key: str, defaults: dict[str, object]) -> None:
         rows = list(getattr(self.config, key))
@@ -280,23 +281,28 @@ class DomainsPage(Page):
                         )
 
     def build_ui(self) -> None:
-        with self.config.provide_as("domains_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    v3.VTextField(
-                        v_model="domains_config.domains_eps",
-                        label="epsilon helper variable",
-                        type="number",
-                        variant="outlined",
-                        density="comfortable",
-                        update_modelValue=self.notify_script_change,
-                    )
-            self._volume_ui()
-            self._surface_ui()
-            self._interface_ui()
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("domains_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        v3.VTextField(
+                            v_model="domains_config.domains_eps",
+                            label="epsilon helper variable",
+                            type="number",
+                            variant="outlined",
+                            density="comfortable",
+                            update_modelValue=self.notify_script_change,
+                        )
+                self._volume_ui()
+                self._surface_ui()
+                self._interface_ui()
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         eps = as_float(self.config.domains_eps, DOMAIN_DEFAULTS["domains_eps"])
 
         volume_rows = self.config.volume_rows

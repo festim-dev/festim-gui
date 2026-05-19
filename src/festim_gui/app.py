@@ -20,9 +20,6 @@ class FestimGUI(TrameApp):
             page.register_script_change_callback(self._refresh_script)
 
         self.state.page_index = 0
-        self.state.page_name = self.pages[0].id
-        self.state.page_title = self.pages[0].title
-        self.state.page_description = self.pages[0].description
         self.state.script_view_mode = "snippet"
         self.state.generated_script = ""
 
@@ -36,9 +33,7 @@ class FestimGUI(TrameApp):
     def _set_page_metadata(self, page_index: int) -> None:
         safe_index = max(0, min(page_index, len(self.pages) - 1))
         page = self.pages[safe_index]
-        self.state.page_name = page.id
-        self.state.page_title = page.title
-        self.state.page_description = page.description
+        page.activate()
 
     def _refresh_script(self) -> None:
         page = self.pages[self.state.page_index]
@@ -69,13 +64,7 @@ class FestimGUI(TrameApp):
     def on_script_view_mode_change(self, **_kwargs):
         self._refresh_script()
 
-    def _build_page_templates(self):
-        for page in self.pages:
-            page.mount_template()
-
     def _build_ui(self, *_args, **_kwargs):
-        self._build_page_templates()
-
         with SinglePageLayout(self.server) as self.ui:
             self.ui.title.set_text("FESTIM Script Builder")
             with self.ui.toolbar:

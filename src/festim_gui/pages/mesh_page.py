@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.pages.page import Page
 from festim_gui.utils import as_float, as_int
@@ -39,96 +40,101 @@ class MeshPage(Page):
     coordinate_systems = COORDINATE_SYSTEMS
     cell_types = CELL_TYPES
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_mesh")
         self.config = MeshPageState(server)
         self.config.watch(WATCH_FIELDS, self.notify_script_change, sync=True)
+        self.build_ui()
 
     def build_ui(self) -> None:
-        with v3.VCard(variant="outlined"):
-            with v3.VCardText(classes="d-flex flex-column ga-3"):
-                with self.config.provide_as("mesh_config"):
-                    v3.VTextField(
-                        v_model="mesh_config.mesh_var",
-                        label="dolfinx mesh variable",
-                        variant="outlined",
-                        density="comfortable",
-                        update_modelValue=self.notify_script_change,
-                    )
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_nx",
-                                label="nx",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_ny",
-                                label="ny",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_xmin",
-                                label="xmin",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_xmax",
-                                label="xmax",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_ymin",
-                                label="ymin",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="mesh_config.mesh_ymax",
-                                label="ymax",
-                                type="number",
-                                variant="outlined",
-                                density="comfortable",
-                                update_modelValue=self.notify_script_change,
-                            )
-                    v3.VSelect(
-                        v_model="mesh_config.mesh_coordinate_system",
-                        items=(self.coordinate_systems,),
-                        label="Coordinate system",
-                        variant="outlined",
-                        density="comfortable",
-                        update_modelValue=self.notify_script_change,
-                    )
-                    v3.VSelect(
-                        v_model="mesh_config.mesh_cell_type",
-                        items=(self.cell_types,),
-                        label="Cell type",
-                        variant="outlined",
-                        density="comfortable",
-                        update_modelValue=self.notify_script_change,
-                    )
+        with DivLayout(self.server, template_name=self.id):
+            with v3.VCard(variant="outlined"):
+                with v3.VCardText(classes="d-flex flex-column ga-3"):
+                    with self.config.provide_as("mesh_config"):
+                        v3.VTextField(
+                            v_model="mesh_config.mesh_var",
+                            label="dolfinx mesh variable",
+                            variant="outlined",
+                            density="comfortable",
+                            update_modelValue=self.notify_script_change,
+                        )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_nx",
+                                    label="nx",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_ny",
+                                    label="ny",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_xmin",
+                                    label="xmin",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_xmax",
+                                    label="xmax",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_ymin",
+                                    label="ymin",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="mesh_config.mesh_ymax",
+                                    label="ymax",
+                                    type="number",
+                                    variant="outlined",
+                                    density="comfortable",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                        v3.VSelect(
+                            v_model="mesh_config.mesh_coordinate_system",
+                            items=(self.coordinate_systems,),
+                            label="Coordinate system",
+                            variant="outlined",
+                            density="comfortable",
+                            update_modelValue=self.notify_script_change,
+                        )
+                        v3.VSelect(
+                            v_model="mesh_config.mesh_cell_type",
+                            items=(self.cell_types,),
+                            label="Cell type",
+                            variant="outlined",
+                            density="comfortable",
+                            update_modelValue=self.notify_script_change,
+                        )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
         nx = as_int(self.config.mesh_nx, DEFAULTS["mesh_nx"])
@@ -151,7 +157,7 @@ class MeshPage(Page):
             "    MPI.COMM_WORLD, [lower_left, upper_right], [nx, ny], cell_type=cell_type",
             ")",
             (
-                f"{self._problem_page.problem_var}.mesh = "
+                f"{self.page_problem.problem_var}.mesh = "
                 f"F.Mesh({self.config.mesh_var}, coordinate_system=coordinate_system)"
             ),
         ]

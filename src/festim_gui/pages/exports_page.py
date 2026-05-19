@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.pages.page import Page
 from festim_gui.utils import as_bool
@@ -30,9 +31,8 @@ class ExportsPage(Page):
     title = "9. Exports"
     description = "Configure VTX species exports and derived quantity exports."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_exports")
         self.config = ExportsPageState(server)
         self.config.watch(
             [
@@ -47,72 +47,78 @@ class ExportsPage(Page):
             self.notify_script_change,
             sync=True,
         )
+        self.build_ui()
 
     def build_ui(self) -> None:
-        with self.config.provide_as("exports_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    v3.VSwitch(
-                        v_model="exports_config.enable_vtx_species_exports",
-                        label="Enable VTX species exports",
-                        color="primary",
-                        hide_details=True,
-                        update_modelValue=self.notify_script_change,
-                    )
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="exports_config.field_exports_var",
-                                label="Field export list variable",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="exports_config.vtx_field_expr",
-                                label="field expression",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                    v3.VTextField(
-                        v_model="exports_config.vtx_filename_template",
-                        label="VTX filename template (f-string body)",
-                        variant="outlined",
-                        density="compact",
-                        update_modelValue=self.notify_script_change,
-                    )
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("exports_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        v3.VSwitch(
+                            v_model="exports_config.enable_vtx_species_exports",
+                            label="Enable VTX species exports",
+                            color="primary",
+                            hide_details=True,
+                            update_modelValue=self.notify_script_change,
+                        )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="exports_config.field_exports_var",
+                                    label="Field export list variable",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="exports_config.vtx_field_expr",
+                                    label="field expression",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                        v3.VTextField(
+                            v_model="exports_config.vtx_filename_template",
+                            label="VTX filename template (f-string body)",
+                            variant="outlined",
+                            density="compact",
+                            update_modelValue=self.notify_script_change,
+                        )
 
-                    v3.VDivider(classes="my-1")
+                        v3.VDivider(classes="my-1")
 
-                    v3.VSwitch(
-                        v_model="exports_config.enable_surface_flux_exports",
-                        label="Enable surface flux exports",
-                        color="primary",
-                        hide_details=True,
-                        update_modelValue=self.notify_script_change,
-                    )
-                    with v3.VRow(classes="ga-0"):
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="exports_config.derived_exports_var",
-                                label="Derived export list variable",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                        with v3.VCol(cols="6"):
-                            v3.VTextField(
-                                v_model="exports_config.surface_flux_field_var",
-                                label="Surface flux field variable",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
+                        v3.VSwitch(
+                            v_model="exports_config.enable_surface_flux_exports",
+                            label="Enable surface flux exports",
+                            color="primary",
+                            hide_details=True,
+                            update_modelValue=self.notify_script_change,
+                        )
+                        with v3.VRow(classes="ga-0"):
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="exports_config.derived_exports_var",
+                                    label="Derived export list variable",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                            with v3.VCol(cols="6"):
+                                v3.VTextField(
+                                    v_model="exports_config.surface_flux_field_var",
+                                    label="Surface flux field variable",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         field_exports_var = (
             self.config.field_exports_var.strip() or DEFAULTS["field_exports_var"]
         )

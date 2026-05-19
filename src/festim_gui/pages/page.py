@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from trame.app import TrameComponent
-from trame.ui.html import DivLayout
 
 
 class Page(TrameComponent, ABC):
@@ -9,13 +8,9 @@ class Page(TrameComponent, ABC):
     title = ""
     description = ""
 
-    def __init__(self, server):
-        super().__init__(server)
+    def __init__(self, server, **kwargs):
+        super().__init__(server, **kwargs)
         self._script_change_callback = None
-
-    def mount_template(self) -> None:
-        with DivLayout(self.server, template_name=self.id):
-            self.build_ui()
 
     def register_script_change_callback(self, callback) -> None:
         self._script_change_callback = callback
@@ -31,3 +26,9 @@ class Page(TrameComponent, ABC):
     @abstractmethod
     def script_lines(self) -> list[str]:
         pass
+
+    def activate(self):
+        self.state.page_name = self.id
+        self.state.page_title = self.title
+        self.state.page_description = self.description
+        return self

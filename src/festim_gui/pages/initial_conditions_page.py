@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -36,13 +37,13 @@ class InitialConditionsPage(Page):
     title = "5b. Initial Conditions"
     description = "Create one or more F.InitialConcentration objects."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_initial_conditions")
         self.config = InitialConditionsPageState(server)
         self.config.watch(
             ["initial_condition_rows"], self.notify_script_change, sync=True
         )
+        self.build_ui()
 
     def add_initial_condition(self, *_args, **_kwargs):
         rows = list(self.config.initial_condition_rows)
@@ -57,61 +58,66 @@ class InitialConditionsPage(Page):
         self.config.initial_condition_rows = rows
 
     def build_ui(self) -> None:
-        with self.config.provide_as("initial_conditions_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    RepeatedItemControls(
-                        on_add=self.add_initial_condition,
-                        on_remove=self.remove_initial_condition,
-                    )
-                    with v3.VCard(
-                        variant="tonal",
-                        v_for="(ic_row, idx) in initial_conditions_config.initial_condition_rows",
-                        key=("idx",),
-                    ):
-                        with v3.VCardText(classes="d-flex flex-column ga-2"):
-                            v3.VLabel(
-                                "Initial concentration {{ idx + 1 }}",
-                                classes="text-caption",
-                            )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="ic_row.var",
-                                        label="Variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="ic_row.species_var",
-                                        label="species variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="ic_row.value",
-                                        label="value",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="ic_row.volume_var",
-                                        label="volume variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("initial_conditions_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        RepeatedItemControls(
+                            on_add=self.add_initial_condition,
+                            on_remove=self.remove_initial_condition,
+                        )
+                        with v3.VCard(
+                            variant="tonal",
+                            v_for="(ic_row, idx) in initial_conditions_config.initial_condition_rows",
+                            key=("idx",),
+                        ):
+                            with v3.VCardText(classes="d-flex flex-column ga-2"):
+                                v3.VLabel(
+                                    "Initial concentration {{ idx + 1 }}",
+                                    classes="text-caption",
+                                )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="ic_row.var",
+                                            label="Variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="ic_row.species_var",
+                                            label="species variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="ic_row.value",
+                                            label="value",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="ic_row.volume_var",
+                                            label="volume variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         lines = ["# 5b. Create initial conditions"]
         rows = self.config.initial_condition_rows
 

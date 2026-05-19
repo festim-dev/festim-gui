@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -47,11 +48,11 @@ class ReactionsPage(Page):
     title = "5c. Reactions"
     description = "Create one or more F.Reaction objects."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_reactions")
         self.config = ReactionsPageState(server)
         self.config.watch(["reaction_rows"], self.notify_script_change, sync=True)
+        self.build_ui()
 
     def add_reaction(self, *_args, **_kwargs):
         rows = list(self.config.reaction_rows)
@@ -66,88 +67,93 @@ class ReactionsPage(Page):
         self.config.reaction_rows = rows
 
     def build_ui(self) -> None:
-        with self.config.provide_as("reactions_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    RepeatedItemControls(
-                        on_add=self.add_reaction, on_remove=self.remove_reaction
-                    )
-                    with v3.VCard(
-                        variant="tonal",
-                        v_for="(reaction_row, idx) in reactions_config.reaction_rows",
-                        key=("idx",),
-                    ):
-                        with v3.VCardText(classes="d-flex flex-column ga-2"):
-                            v3.VLabel("Reaction {{ idx + 1 }}", classes="text-caption")
-                            v3.VTextField(
-                                v_model="reaction_row.var",
-                                label="Variable",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                            v3.VTextField(
-                                v_model="reaction_row.reactants",
-                                label="reactants (comma-separated vars)",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                            v3.VTextField(
-                                v_model="reaction_row.products",
-                                label="products (comma-separated vars)",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="reaction_row.k_0",
-                                        label="k_0",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="reaction_row.E_k",
-                                        label="E_k",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="reaction_row.p_0",
-                                        label="p_0",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="reaction_row.E_p",
-                                        label="E_p",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            v3.VTextField(
-                                v_model="reaction_row.volume_var",
-                                label="volume variable",
-                                variant="outlined",
-                                density="compact",
-                                update_modelValue=self.notify_script_change,
-                            )
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("reactions_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        RepeatedItemControls(
+                            on_add=self.add_reaction, on_remove=self.remove_reaction
+                        )
+                        with v3.VCard(
+                            variant="tonal",
+                            v_for="(reaction_row, idx) in reactions_config.reaction_rows",
+                            key=("idx",),
+                        ):
+                            with v3.VCardText(classes="d-flex flex-column ga-2"):
+                                v3.VLabel("Reaction {{ idx + 1 }}", classes="text-caption")
+                                v3.VTextField(
+                                    v_model="reaction_row.var",
+                                    label="Variable",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                                v3.VTextField(
+                                    v_model="reaction_row.reactants",
+                                    label="reactants (comma-separated vars)",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                                v3.VTextField(
+                                    v_model="reaction_row.products",
+                                    label="products (comma-separated vars)",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="reaction_row.k_0",
+                                            label="k_0",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="reaction_row.E_k",
+                                            label="E_k",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="reaction_row.p_0",
+                                            label="p_0",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="reaction_row.E_p",
+                                            label="E_p",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                v3.VTextField(
+                                    v_model="reaction_row.volume_var",
+                                    label="volume variable",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         lines = ["# 5c. Create reactions"]
         rows = self.config.reaction_rows
 

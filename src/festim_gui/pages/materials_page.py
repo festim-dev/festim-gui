@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -33,9 +34,10 @@ class MaterialsPage(Page):
     description = "Create one or more F.Material objects."
 
     def __init__(self, server):
-        super().__init__(server)
+        super().__init__(server, ctx_name="page_materials")
         self.config = MaterialsPageState(server)
         self.config.watch(["material_rows"], self.notify_script_change, sync=True)
+        self.build_ui()
 
     def add_material(self, *_args, **_kwargs):
         rows = list(self.config.material_rows)
@@ -50,74 +52,76 @@ class MaterialsPage(Page):
         self.config.material_rows = rows
 
     def build_ui(self) -> None:
-        with v3.VCard(variant="outlined"):
-            with v3.VCardText(classes="d-flex flex-column ga-3"):
-                with self.config.provide_as("materials_config"):
-                    RepeatedItemControls(
-                        on_add=self.add_material, on_remove=self.remove_material
-                    )
-                    with v3.VCard(
-                        variant="tonal",
-                        v_for="(material_row, idx) in materials_config.material_rows",
-                        key=("idx",),
-                    ):
-                        with v3.VCardText(classes="d-flex flex-column ga-2"):
-                            v3.VLabel("Material {{ idx + 1 }}", classes="text-caption")
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.var",
-                                        label="Variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.name",
-                                        label="name",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.D_0",
-                                        label="D_0",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.E_D",
-                                        label="E_D",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.K_S_0",
-                                        label="K_S_0",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="material_row.E_K_S",
-                                        label="E_K_S",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
+        with DivLayout(self.server, template_name=self.id):
+            with v3.VCard(variant="outlined"):
+                with v3.VCardText(classes="d-flex flex-column ga-3"):
+                    with self.config.provide_as("materials_config"):
+                        RepeatedItemControls(
+                            on_add=self.add_material, on_remove=self.remove_material
+                        )
+                        with v3.VCard(
+                            variant="tonal",
+                            v_for="(material_row, idx) in materials_config.material_rows",
+                            key=("idx",),
+                        ):
+                            with v3.VCardText(classes="d-flex flex-column ga-2"):
+                                v3.VLabel("Material {{ idx + 1 }}", classes="text-caption")
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.var",
+                                            label="Variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.name",
+                                            label="name",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.D_0",
+                                            label="D_0",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.E_D",
+                                            label="E_D",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.K_S_0",
+                                            label="K_S_0",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="material_row.E_K_S",
+                                            label="E_K_S",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+
 
     def script_lines(self) -> list[str]:
         lines = ["# 3. Create materials"]

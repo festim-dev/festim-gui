@@ -1,5 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
 from trame.widgets import vuetify3 as v3
+from trame.ui.html import DivLayout
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -32,13 +33,13 @@ class BoundaryConditionsPage(Page):
     title = "6. Boundary Conditions"
     description = "Create one or more F.FixedConcentrationBC objects."
 
-    def __init__(self, server, problem_page):
-        super().__init__(server)
-        self._problem_page = problem_page
+    def __init__(self, server):
+        super().__init__(server, ctx_name="page_boundary_conditions")
         self.config = BoundaryConditionsPageState(server)
         self.config.watch(
             ["boundary_condition_rows"], self.notify_script_change, sync=True
         )
+        self.build_ui()
 
     def add_boundary_condition(self, *_args, **_kwargs):
         rows = list(self.config.boundary_condition_rows)
@@ -53,58 +54,63 @@ class BoundaryConditionsPage(Page):
         self.config.boundary_condition_rows = rows
 
     def build_ui(self) -> None:
-        with self.config.provide_as("boundary_conditions_config"):
-            with v3.VCard(variant="outlined"):
-                with v3.VCardText(classes="d-flex flex-column ga-3"):
-                    RepeatedItemControls(
-                        on_add=self.add_boundary_condition,
-                        on_remove=self.remove_boundary_condition,
-                    )
-                    with v3.VCard(
-                        variant="tonal",
-                        v_for="(bc_row, idx) in boundary_conditions_config.boundary_condition_rows",
-                        key=("idx",),
-                    ):
-                        with v3.VCardText(classes="d-flex flex-column ga-2"):
-                            v3.VLabel("BC {{ idx + 1 }}", classes="text-caption")
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="bc_row.var",
-                                        label="Variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="bc_row.value",
-                                        label="value",
-                                        type="number",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                            with v3.VRow(classes="ga-0"):
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="bc_row.subdomain_var",
-                                        label="surface subdomain variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
-                                with v3.VCol(cols="6"):
-                                    v3.VTextField(
-                                        v_model="bc_row.species_var",
-                                        label="species variable",
-                                        variant="outlined",
-                                        density="compact",
-                                        update_modelValue=self.notify_script_change,
-                                    )
+        with DivLayout(self.server, template_name=self.id):
+            with self.config.provide_as("boundary_conditions_config"):
+                with v3.VCard(variant="outlined"):
+                    with v3.VCardText(classes="d-flex flex-column ga-3"):
+                        RepeatedItemControls(
+                            on_add=self.add_boundary_condition,
+                            on_remove=self.remove_boundary_condition,
+                        )
+                        with v3.VCard(
+                            variant="tonal",
+                            v_for="(bc_row, idx) in boundary_conditions_config.boundary_condition_rows",
+                            key=("idx",),
+                        ):
+                            with v3.VCardText(classes="d-flex flex-column ga-2"):
+                                v3.VLabel("BC {{ idx + 1 }}", classes="text-caption")
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="bc_row.var",
+                                            label="Variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="bc_row.value",
+                                            label="value",
+                                            type="number",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                with v3.VRow(classes="ga-0"):
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="bc_row.subdomain_var",
+                                            label="surface subdomain variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+                                    with v3.VCol(cols="6"):
+                                        v3.VTextField(
+                                            v_model="bc_row.species_var",
+                                            label="species variable",
+                                            variant="outlined",
+                                            density="compact",
+                                            update_modelValue=self.notify_script_change,
+                                        )
+
+    @property
+    def page_problem(self):
+        return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        problem_var = self._problem_page.problem_var
+        problem_var = self.page_problem.problem_var
         lines = ["# 6. Create boundary conditions"]
         rows = self.config.boundary_condition_rows
         if not rows:
