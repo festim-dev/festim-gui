@@ -1,6 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
-from trame.widgets import vuetify3 as v3
 from trame.ui.html import DivLayout
+from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -65,7 +65,9 @@ class MaterialsPage(Page):
                             key=("idx",),
                         ):
                             with v3.VCardText(classes="d-flex flex-column ga-2"):
-                                v3.VLabel("Material {{ idx + 1 }}", classes="text-caption")
+                                v3.VLabel(
+                                    "Material {{ idx + 1 }}", classes="text-caption"
+                                )
                                 with v3.VRow(classes="ga-0"):
                                     with v3.VCol(cols="6"):
                                         v3.VTextField(
@@ -121,7 +123,6 @@ class MaterialsPage(Page):
                                             density="compact",
                                             update_modelValue=self.notify_script_change,
                                         )
-
 
     def script_lines(self) -> list[str]:
         lines = ["# 3. Create materials"]

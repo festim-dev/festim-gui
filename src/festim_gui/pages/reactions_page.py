@@ -1,6 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
-from trame.widgets import vuetify3 as v3
 from trame.ui.html import DivLayout
+from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -80,7 +80,9 @@ class ReactionsPage(Page):
                             key=("idx",),
                         ):
                             with v3.VCardText(classes="d-flex flex-column ga-2"):
-                                v3.VLabel("Reaction {{ idx + 1 }}", classes="text-caption")
+                                v3.VLabel(
+                                    "Reaction {{ idx + 1 }}", classes="text-caption"
+                                )
                                 v3.VTextField(
                                     v_model="reaction_row.var",
                                     label="Variable",

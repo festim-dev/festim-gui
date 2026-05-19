@@ -1,6 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
-from trame.widgets import vuetify3 as v3
 from trame.ui.html import DivLayout
+from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import RepeatedItemControls
 from festim_gui.pages.page import Page
@@ -79,7 +79,9 @@ class SpeciesPage(Page):
                             key=("idx",),
                         ):
                             with v3.VCardText(classes="d-flex flex-column ga-2"):
-                                v3.VLabel("Species {{ idx + 1 }}", classes="text-caption")
+                                v3.VLabel(
+                                    "Species {{ idx + 1 }}", classes="text-caption"
+                                )
                                 with v3.VRow(classes="ga-0"):
                                     with v3.VCol(cols="6"):
                                         v3.VTextField(

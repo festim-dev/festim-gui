@@ -1,6 +1,6 @@
 from trame.app.dataclass import StateDataModel, Sync
-from trame.widgets import vuetify3 as v3
 from trame.ui.html import DivLayout
+from trame.widgets import vuetify3 as v3
 
 from festim_gui.pages.page import Page
 
