@@ -4,6 +4,7 @@ from .exports_page import ExportsPage
 from .initial_conditions_page import InitialConditionsPage
 from .materials_page import MaterialsPage
 from .mesh_page import MeshPage
+from .particle_source_page import ParticleSourcePage
 from .page import Page
 from .problem_page import ProblemPage
 from .reactions_page import ReactionsPage
@@ -23,6 +24,7 @@ def create_pages(server):
         InitialConditionsPage(server),
         ReactionsPage(server),
         BoundaryConditionsPage(server),
+        ParticleSourcePage(server),
         TemperaturePage(server),
         SettingsPage(server),
         ExportsPage(server),
