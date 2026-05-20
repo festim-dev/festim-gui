@@ -9,17 +9,18 @@ from festim_gui.utils import build_initial_rows, resolve_template_row
 DEFAULTS = {
     "field_exports_var": "concentration_field_exports",
     "derived_exports_var": "derived_quantities",
-    "vtx_filename_template": "out/vol_{subdomain.id}.bp",
 }
 
 VTX_EXPORT_DEFAULTS = {
     "var": "vtx_export_{i}",
+    "filename": "out/field_export.bp",
     "field_expr": "problem.species",
     "subdomain_var": "volume_1",
 }
 VTX_EXPORTS = [
     {
         "var": "vtx_export_1",
+        "filename": "out/field_export.bp",
         "field_expr": "problem.species",
         "subdomain_var": "volume_1",
     }
@@ -72,7 +73,6 @@ VOLUME_QUANTITIES = [
 class ExportsPageState(StateDataModel):
     field_exports_var = Sync(str, DEFAULTS["field_exports_var"])
     derived_exports_var = Sync(str, DEFAULTS["derived_exports_var"])
-    vtx_filename_template = Sync(str, DEFAULTS["vtx_filename_template"])
     vtx_export_rows = Sync(
         list,
         lambda: build_initial_rows(VTX_EXPORT_DEFAULTS, VTX_EXPORTS),
@@ -102,7 +102,6 @@ class ExportsPage(Page):
             [
                 "field_exports_var",
                 "derived_exports_var",
-                "vtx_filename_template",
                 "vtx_export_rows",
                 "surface_quantity_rows",
                 "volume_quantity_rows",
@@ -114,7 +113,9 @@ class ExportsPage(Page):
 
     def add_vtx_export(self, *_args, **_kwargs):
         rows = list(self.config.vtx_export_rows)
-        rows.append(resolve_template_row(VTX_EXPORT_DEFAULTS, len(rows)))
+        row = resolve_template_row(VTX_EXPORT_DEFAULTS, len(rows))
+        row["filename"] = f"out/field_export_{len(rows) + 1}.bp"
+        rows.append(row)
         self.config.vtx_export_rows = rows
 
     def remove_vtx_export(self, *_args, **_kwargs):
@@ -167,13 +168,6 @@ class ExportsPage(Page):
                             density="compact",
                             update_modelValue=self.notify_script_change,
                         )
-                        v3.VTextField(
-                            v_model="exports_config.vtx_filename_template",
-                            label="VTX filename template",
-                            variant="outlined",
-                            density="compact",
-                            update_modelValue=self.notify_script_change,
-                        )
 
                         v3.VDivider(classes="my-1")
 
@@ -208,6 +202,13 @@ class ExportsPage(Page):
                                             density="compact",
                                             update_modelValue=self.notify_script_change,
                                         )
+                                v3.VTextField(
+                                    v_model="vtx_row.filename",
+                                    label="Filename",
+                                    variant="outlined",
+                                    density="compact",
+                                    update_modelValue=self.notify_script_change,
+                                )
                                 v3.VTextField(
                                     v_model="vtx_row.field_expr",
                                     label="Field expression",
@@ -336,23 +337,20 @@ class ExportsPage(Page):
         derived_exports_var = (
             self.config.derived_exports_var.strip() or DEFAULTS["derived_exports_var"]
         )
-        vtx_filename_template = (
-            self.config.vtx_filename_template.strip()
-            or DEFAULTS["vtx_filename_template"]
-        )
 
         lines = ["# 9. Exports"]
         vtx_var_names = []
         for idx, row in enumerate(self.config.vtx_export_rows):
             defaults = resolve_template_row(VTX_EXPORT_DEFAULTS, idx)
             var_name = str(row.get("var", defaults["var"]))
+            filename = str(row.get("filename", defaults["filename"]))
             field_expr = str(row.get("field_expr", defaults["field_expr"]))
             subdomain_var = str(row.get("subdomain_var", defaults["subdomain_var"]))
             vtx_var_names.append(var_name)
             lines.extend(
                 [
                     f"{var_name} = F.VTXSpeciesExport(",
-                    f'    filename=f"{vtx_filename_template}",',
+                    f'    filename="{filename}",',
                     f"    field={field_expr},",
                     f"    subdomain={subdomain_var},",
                     ")",
