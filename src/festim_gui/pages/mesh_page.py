@@ -10,15 +10,23 @@ DEFAULTS = {
     "mesh_nx": None,
     "mesh_ny": None,
     "mesh_coordinate_system": "cartesian",
-    "mesh_xmin": 0.0,
-    "mesh_ymin": 0.0,
-    "mesh_xmax": 1.0,
-    "mesh_ymax": 1.0,
+    "mesh_xmin": None,
+    "mesh_ymin": None,
+    "mesh_xmax": None,
+    "mesh_ymax": None,
     "mesh_cell_type": "triangle",
 }
 COORDINATE_SYSTEMS = ["cartesian", "cylindrical", "spherical"]
 CELL_TYPES = ["triangle", "quadrilateral"]
-WATCH_FIELDS = [*DEFAULTS.keys(), "mesh_nx_error", "mesh_ny_error"]
+WATCH_FIELDS = [
+    *DEFAULTS.keys(),
+    "mesh_nx_error",
+    "mesh_ny_error",
+    "mesh_xmin_error",
+    "mesh_ymin_error",
+    "mesh_xmax_error",
+    "mesh_ymax_error",
+]
 
 
 class MeshPageState(StateDataModel):
@@ -28,10 +36,14 @@ class MeshPageState(StateDataModel):
     mesh_nx_error = Sync(bool, False)
     mesh_ny_error = Sync(bool, False)
     mesh_coordinate_system = Sync(str, DEFAULTS["mesh_coordinate_system"])
-    mesh_xmin = Sync(float, DEFAULTS["mesh_xmin"])
-    mesh_ymin = Sync(float, DEFAULTS["mesh_ymin"])
-    mesh_xmax = Sync(float, DEFAULTS["mesh_xmax"])
-    mesh_ymax = Sync(float, DEFAULTS["mesh_ymax"])
+    mesh_xmin = Sync(str, "")
+    mesh_ymin = Sync(str, "")
+    mesh_xmax = Sync(str, "")
+    mesh_ymax = Sync(str, "")
+    mesh_xmin_error = Sync(bool, False)
+    mesh_ymin_error = Sync(bool, False)
+    mesh_xmax_error = Sync(bool, False)
+    mesh_ymax_error = Sync(bool, False)
     mesh_cell_type = Sync(str, DEFAULTS["mesh_cell_type"])
 
 
@@ -42,21 +54,28 @@ class MeshPage(Page):
     coordinate_systems = COORDINATE_SYSTEMS
     cell_types = CELL_TYPES
 
+    _REQUIRED_FIELDS = (
+        ("mesh_nx", "mesh_nx_error"),
+        ("mesh_ny", "mesh_ny_error"),
+        ("mesh_xmin", "mesh_xmin_error"),
+        ("mesh_xmax", "mesh_xmax_error"),
+        ("mesh_ymin", "mesh_ymin_error"),
+        ("mesh_ymax", "mesh_ymax_error"),
+    )
+
     def __init__(self, server):
         super().__init__(server, ctx_name="page_mesh")
         self.config = MeshPageState(server)
         self.config.watch(WATCH_FIELDS, self.notify_script_change, sync=True)
-        self.config.watch(["mesh_nx"], self._clear_nx_error, sync=True)
-        self.config.watch(["mesh_ny"], self._clear_ny_error, sync=True)
+        self.config.watch(
+            [f for f, _ in self._REQUIRED_FIELDS], self._clear_errors, sync=True
+        )
         self.build_ui()
 
-    def _clear_nx_error(self, *_args, **_kwargs):
-        if str(self.config.mesh_nx).strip():
-            self.config.mesh_nx_error = False
-
-    def _clear_ny_error(self, *_args, **_kwargs):
-        if str(self.config.mesh_ny).strip():
-            self.config.mesh_ny_error = False
+    def _clear_errors(self):
+        for field, error_field in self._REQUIRED_FIELDS:
+            if str(getattr(self.config, field)).strip():
+                setattr(self.config, error_field, False)
 
     def build_ui(self) -> None:
         with DivLayout(self.server, template_name=self.id):
@@ -105,6 +124,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_xmin_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_xmin_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                             with v3.VCol(cols="6"):
@@ -114,6 +137,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_xmax_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_xmax_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                         with v3.VRow(classes="ga-0"):
@@ -124,6 +151,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_ymin_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_ymin_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                             with v3.VCol(cols="6"):
@@ -133,6 +164,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_ymax_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_ymax_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                         v3.VSelect(
@@ -153,28 +188,31 @@ class MeshPage(Page):
                         )
 
     def is_valid(self) -> bool:
-        return bool(str(self.config.mesh_nx).strip()) and bool(
-            str(self.config.mesh_ny).strip()
+        return all(
+            str(getattr(self.config, field)).strip()
+            for field, _ in self._REQUIRED_FIELDS
         )
 
     def validate(self) -> bool:
-        nx_empty = not str(self.config.mesh_nx).strip()
-        ny_empty = not str(self.config.mesh_ny).strip()
-        self.config.mesh_nx_error = nx_empty
-        self.config.mesh_ny_error = ny_empty
-        return not (nx_empty or ny_empty)
+        valid = True
+        for field, error_field in self._REQUIRED_FIELDS:
+            empty = not str(getattr(self.config, field)).strip()
+            setattr(self.config, error_field, empty)
+            if empty:
+                valid = False
+        return valid
 
     @property
     def page_problem(self):
         return self.ctx.page_problem
 
     def script_lines(self) -> list[str]:
-        nx = as_int(self.config.mesh_nx, DEFAULTS["mesh_nx"])
-        ny = as_int(self.config.mesh_ny, DEFAULTS["mesh_ny"])
-        xmin = as_float(self.config.mesh_xmin, DEFAULTS["mesh_xmin"])
-        ymin = as_float(self.config.mesh_ymin, DEFAULTS["mesh_ymin"])
-        xmax = as_float(self.config.mesh_xmax, DEFAULTS["mesh_xmax"])
-        ymax = as_float(self.config.mesh_ymax, DEFAULTS["mesh_ymax"])
+        nx = as_int(self.config.mesh_nx, 0)
+        ny = as_int(self.config.mesh_ny, 0)
+        xmin = as_float(self.config.mesh_xmin, 0.0)
+        ymin = as_float(self.config.mesh_ymin, 0.0)
+        xmax = as_float(self.config.mesh_xmax, 0.0)
+        ymax = as_float(self.config.mesh_ymax, 0.0)
 
         return [
             "# 2. Create mesh",
