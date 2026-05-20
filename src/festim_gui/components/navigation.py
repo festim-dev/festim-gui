@@ -3,7 +3,7 @@ from trame.widgets import vuetify3 as v3
 
 
 class PageNavigationBar(v3.VCard):
-    def __init__(self, pages, **kwargs):
+    def __init__(self, pages, on_navigate, **kwargs):
         super().__init__(variant="outlined", classes="mb-4", **kwargs)
 
         with self:
@@ -21,9 +21,12 @@ class PageNavigationBar(v3.VCard):
                         v3.VChip(
                             f"{page.title}",
                             variant="outlined",
-                            color=(f"page_index === {index} ? 'primary' : 'default'",),
+                            color=(
+                                f"page_index === {index} ? 'primary'"
+                                f" : (page_errors && page_errors[{index}] && page_visited && page_visited[{index}] ? 'error' : 'default')",
+                            ),
                             classes="text-caption",
-                            click=f"page_index = {index}",
+                            click=(on_navigate, f"[{index}]"),
                         )
 
 

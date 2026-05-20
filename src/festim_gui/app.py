@@ -22,6 +22,8 @@ class FestimGUI(TrameApp):
         self.state.page_index = 0
         self.state.script_view_mode = "snippet"
         self.state.generated_script = ""
+        self.state.page_errors = [False] * len(self.pages)
+        self.state.page_visited = [False] * len(self.pages)
 
         self._refresh_script()
 
@@ -40,15 +42,30 @@ class FestimGUI(TrameApp):
         show_full_script = self.state.script_view_mode == "full"
         if show_full_script:
             self.state.generated_script = build_script(self.pages, include_header=True)
-            return
+        else:
+            self.state.generated_script = build_script([page], include_header=False)
 
-        self.state.generated_script = build_script([page], include_header=False)
+        self.state.page_errors = [not p.is_valid() for p in self.pages]
+
+    def _mark_current_visited(self):
+        idx = self.state.page_index
+        visited = list(self.state.page_visited)
+        if not visited[idx]:
+            visited[idx] = True
+            self.state.page_visited = visited
+        self.pages[idx].validate()
 
     def previous_page(self):
+        self._mark_current_visited()
         self.state.page_index = max(0, self.state.page_index - 1)
 
     def next_page(self):
+        self._mark_current_visited()
         self.state.page_index = min(len(self.pages) - 1, self.state.page_index + 1)
+
+    def go_to_page(self, index):
+        self._mark_current_visited()
+        self.state.page_index = index
 
     @change("page_index")
     def on_page_change(self, page_index, **_kwargs):
@@ -81,7 +98,9 @@ class FestimGUI(TrameApp):
                             style="height: calc(100vh - 128px); min-height: 0;",
                         ):
                             with html.Div(classes="flex-grow-1 overflow-y-auto pr-1"):
-                                PageNavigationBar(self.pages)
+                                PageNavigationBar(
+                                    self.pages, on_navigate=self.go_to_page
+                                )
                                 client.ServerTemplate(
                                     name=("page_name", self.pages[0].id)
                                 )

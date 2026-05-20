@@ -27,6 +27,12 @@ class Page(TrameComponent, ABC):
     def script_lines(self) -> list[str]:
         pass
 
+    def is_valid(self) -> bool:
+        return True
+
+    def validate(self) -> bool:
+        return self.is_valid()
+
     def activate(self):
         self.state.page_name = self.id
         self.state.page_title = self.title
