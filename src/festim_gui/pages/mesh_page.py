@@ -6,7 +6,7 @@ from festim_gui.pages.page import Page
 from festim_gui.utils import as_float, as_int
 
 DEFAULTS = {
-    "mesh_var": "mesh_dolfinx",
+    "mesh_var": "my_mesh",
     "mesh_nx": None,
     "mesh_ny": None,
     "mesh_coordinate_system": "cartesian",
@@ -84,7 +84,7 @@ class MeshPage(Page):
                     with self.config.provide_as("mesh_config"):
                         v3.VTextField(
                             v_model="mesh_config.mesh_var",
-                            label="dolfinx mesh variable",
+                            label="Mesh variable name",
                             variant="outlined",
                             density="comfortable",
                             update_modelValue=self.notify_script_change,
