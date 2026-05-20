@@ -7,8 +7,8 @@ from festim_gui.utils import as_float, as_int
 
 DEFAULTS = {
     "mesh_var": "mesh_dolfinx",
-    "mesh_nx": 20,
-    "mesh_ny": 20,
+    "mesh_nx": None,
+    "mesh_ny": None,
     "mesh_coordinate_system": "cartesian",
     "mesh_xmin": 0.0,
     "mesh_ymin": 0.0,
@@ -18,13 +18,15 @@ DEFAULTS = {
 }
 COORDINATE_SYSTEMS = ["cartesian", "cylindrical", "spherical"]
 CELL_TYPES = ["triangle", "quadrilateral"]
-WATCH_FIELDS = list(DEFAULTS.keys())
+WATCH_FIELDS = [*DEFAULTS.keys(), "mesh_nx_error", "mesh_ny_error"]
 
 
 class MeshPageState(StateDataModel):
     mesh_var = Sync(str, DEFAULTS["mesh_var"])
-    mesh_nx = Sync(int, DEFAULTS["mesh_nx"])
-    mesh_ny = Sync(int, DEFAULTS["mesh_ny"])
+    mesh_nx = Sync(str, "")
+    mesh_ny = Sync(str, "")
+    mesh_nx_error = Sync(bool, False)
+    mesh_ny_error = Sync(bool, False)
     mesh_coordinate_system = Sync(str, DEFAULTS["mesh_coordinate_system"])
     mesh_xmin = Sync(float, DEFAULTS["mesh_xmin"])
     mesh_ymin = Sync(float, DEFAULTS["mesh_ymin"])
@@ -44,7 +46,17 @@ class MeshPage(Page):
         super().__init__(server, ctx_name="page_mesh")
         self.config = MeshPageState(server)
         self.config.watch(WATCH_FIELDS, self.notify_script_change, sync=True)
+        self.config.watch(["mesh_nx"], self._clear_nx_error, sync=True)
+        self.config.watch(["mesh_ny"], self._clear_ny_error, sync=True)
         self.build_ui()
+
+    def _clear_nx_error(self, *_args, **_kwargs):
+        if str(self.config.mesh_nx).strip():
+            self.config.mesh_nx_error = False
+
+    def _clear_ny_error(self, *_args, **_kwargs):
+        if str(self.config.mesh_ny).strip():
+            self.config.mesh_ny_error = False
 
     def build_ui(self) -> None:
         with DivLayout(self.server, template_name=self.id):
@@ -66,6 +78,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_nx_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_nx_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                             with v3.VCol(cols="6"):
@@ -75,6 +91,10 @@ class MeshPage(Page):
                                     type="number",
                                     variant="outlined",
                                     density="comfortable",
+                                    error=("mesh_config.mesh_ny_error",),
+                                    error_messages=(
+                                        "mesh_config.mesh_ny_error ? 'Required' : ''",
+                                    ),
                                     update_modelValue=self.notify_script_change,
                                 )
                         with v3.VRow(classes="ga-0"):
@@ -131,6 +151,18 @@ class MeshPage(Page):
                             density="comfortable",
                             update_modelValue=self.notify_script_change,
                         )
+
+    def is_valid(self) -> bool:
+        return bool(str(self.config.mesh_nx).strip()) and bool(
+            str(self.config.mesh_ny).strip()
+        )
+
+    def validate(self) -> bool:
+        nx_empty = not str(self.config.mesh_nx).strip()
+        ny_empty = not str(self.config.mesh_ny).strip()
+        self.config.mesh_nx_error = nx_empty
+        self.config.mesh_ny_error = ny_empty
+        return not (nx_empty or ny_empty)
 
     @property
     def page_problem(self):
