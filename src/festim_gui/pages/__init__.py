@@ -8,6 +8,7 @@ from .page import Page
 from .particle_source_page import ParticleSourcePage
 from .problem_page import ProblemPage
 from .reactions_page import ReactionsPage
+from .results_page import ResultsPage
 from .run_page import RunPage
 from .settings_page import SettingsPage
 from .species_page import SpeciesPage
@@ -29,6 +30,7 @@ def create_pages(server):
         SettingsPage(server),
         ExportsPage(server),
         RunPage(server),
+        ResultsPage(server),
     ]
 
 
