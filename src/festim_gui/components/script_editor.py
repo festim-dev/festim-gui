@@ -1,4 +1,4 @@
-from trame.widgets import code
+from trame.widgets import code, html
 from trame.widgets import vuetify3 as v3
 
 
@@ -19,6 +19,17 @@ class ScriptEditor(v3.VCard):
             with v3.VCardTitle(classes="d-flex align-center ga-2"):
                 v3.VLabel("Generated FESTIM Script")
                 v3.VSpacer()
+                with html.A(
+                    href=("download_script_href", ""),
+                    download=("download_script_filename", "festim_generated.py"),
+                    style="text-decoration: none;",
+                    v_if="page_name === 'run'",
+                ):
+                    v3.VBtn(
+                        "Download",
+                        prepend_icon="mdi-download",
+                        variant="text",
+                    )
                 with v3.VBtnToggle(
                     v_model=("script_view_mode", "snippet"),
                     mandatory=True,

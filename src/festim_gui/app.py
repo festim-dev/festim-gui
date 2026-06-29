@@ -1,6 +1,8 @@
+from urllib.parse import quote
+
 from trame.app import TrameApp
 from trame.decorators import change
-from trame.ui.vuetify3 import SinglePageLayout
+from trame.ui.vuetify3 import VAppLayout
 from trame.widgets import client, html
 from trame.widgets import vuetify3 as v3
 
@@ -22,6 +24,8 @@ class FestimGUI(TrameApp):
         self.state.page_index = 0
         self.state.script_view_mode = "snippet"
         self.state.generated_script = ""
+        self.state.download_script_filename = "festim_generated.py"
+        self.state.download_script_href = ""
 
         self._refresh_script()
 
@@ -37,9 +41,13 @@ class FestimGUI(TrameApp):
 
     def _refresh_script(self) -> None:
         page = self.pages[self.state.page_index]
+        full_script = build_script(self.pages, include_header=True)
+        self.state.download_script_href = (
+            f"data:text/plain;charset=utf-8,{quote(full_script)}"
+        )
         show_full_script = self.state.script_view_mode == "full"
         if show_full_script:
-            self.state.generated_script = build_script(self.pages, include_header=True)
+            self.state.generated_script = full_script
             return
 
         self.state.generated_script = build_script([page], include_header=False)
@@ -65,41 +73,35 @@ class FestimGUI(TrameApp):
         self._refresh_script()
 
     def _build_ui(self, *_args, **_kwargs):
-        with SinglePageLayout(self.server) as self.ui:
-            self.ui.title.set_text("FESTIM Script Builder")
-            with self.ui.toolbar:
-                v3.VSpacer()
-                html.Div("{{ page_title }}", classes="text-caption pr-4")
+        with VAppLayout(self.server):
+            with v3.VContainer(fluid=True, classes="pa-4 fill-height"):
+                with v3.VRow(classes="fill-height"):
+                    with v3.VCol(
+                        cols="12",
+                        md="6",
+                        classes="d-flex flex-column",
+                        style="height: calc(100vh - 32px); min-height: 0;",
+                    ):
+                        with html.Div(classes="flex-grow-1 overflow-y-auto pr-1"):
+                            PageNavigationBar(self.pages)
+                            client.ServerTemplate(
+                                name=("page_name", self.pages[0].id)
+                            )
 
-            with self.ui.content:
-                with v3.VContainer(fluid=True, classes="pa-4 fill-height"):
-                    with v3.VRow(classes="fill-height"):
-                        with v3.VCol(
-                            cols="12",
-                            md="6",
-                            classes="d-flex flex-column",
-                            style="height: calc(100vh - 128px); min-height: 0;",
-                        ):
-                            with html.Div(classes="flex-grow-1 overflow-y-auto pr-1"):
-                                PageNavigationBar(self.pages)
-                                client.ServerTemplate(
-                                    name=("page_name", self.pages[0].id)
-                                )
+                        with html.Div(classes="pt-3 mt-auto"):
+                            Navigation(
+                                total_pages=len(self.pages),
+                                on_prev=self.previous_page,
+                                on_next=self.next_page,
+                            )
 
-                            with html.Div(classes="pt-3 mt-auto"):
-                                Navigation(
-                                    total_pages=len(self.pages),
-                                    on_prev=self.previous_page,
-                                    on_next=self.next_page,
-                                )
-
-                        with v3.VCol(
-                            cols="12",
-                            md="6",
-                            classes="d-flex flex-column",
-                            style="height: calc(100vh - 128px); min-height: 0;",
-                        ):
-                            ScriptEditor()
+                    with v3.VCol(
+                        cols="12",
+                        md="6",
+                        classes="d-flex flex-column",
+                        style="height: calc(100vh - 32px); min-height: 0;",
+                    ):
+                        ScriptEditor()
 
 
 def main():
