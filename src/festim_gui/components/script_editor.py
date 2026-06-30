@@ -21,7 +21,7 @@ class ScriptEditor(v3.VCard):
                 v3.VSpacer()
                 with html.A(
                     href=("download_script_href", ""),
-                    download=("download_script_filename", "festim_generated.py"),
+                    download=("download_script_filename", "script.py"),
                     style="text-decoration: none;",
                     v_if="page_name === 'run'",
                 ):

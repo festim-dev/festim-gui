@@ -24,7 +24,7 @@ class FestimGUI(TrameApp):
         self.state.page_index = 0
         self.state.script_view_mode = "snippet"
         self.state.generated_script = ""
-        self.state.download_script_filename = "festim_generated.py"
+        self.state.download_script_filename = "script.py"
         self.state.download_script_href = ""
         self._refresh_script()
 

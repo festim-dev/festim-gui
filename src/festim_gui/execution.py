@@ -69,7 +69,7 @@ class ScriptExecutionManager:
 
             run_root = resolve_run_root()
             run_dir = Path(tempfile.mkdtemp(prefix="festim-gui-", dir=run_root))
-            script_path = run_dir / "generated.py"
+            script_path = run_dir / "script.py"
             log_path = run_dir / "run.log"
             script_path.write_text(script_text, encoding="utf-8")
 

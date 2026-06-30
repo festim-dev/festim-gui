@@ -52,7 +52,7 @@ def test_script_execution_manager_runs_script(monkeypatch, tmp_path):
         event.kind == "log" and "hello from test" in event.text for event in events
     )
     assert output_dir.is_dir()
-    assert (output_dir / "generated.py").is_file()
+    assert (output_dir / "script.py").is_file()
     assert (output_dir / "run.log").is_file()
     assert (output_dir / "out" / "result.txt").read_text(encoding="utf-8") == "done\n"
     assert finished.return_code == 0
