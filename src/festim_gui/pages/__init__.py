@@ -15,7 +15,7 @@ from .temperature_page import TemperaturePage
 
 
 def create_pages(server):
-    return [
+    pages = [
         ProblemPage(server).activate(),
         MeshPage(server),
         MaterialsPage(server),
@@ -28,8 +28,9 @@ def create_pages(server):
         TemperaturePage(server),
         SettingsPage(server),
         ExportsPage(server),
-        RunPage(server),
     ]
+    pages.append(RunPage(server, pages))
+    return pages
 
 
 __all__ = ["Page", "create_pages"]

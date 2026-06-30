@@ -26,7 +26,6 @@ class FestimGUI(TrameApp):
         self.state.generated_script = ""
         self.state.download_script_filename = "festim_generated.py"
         self.state.download_script_href = ""
-
         self._refresh_script()
 
         if self.server.hot_reload:
