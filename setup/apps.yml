@@ -1,4 +1,17 @@
 trame: # Default app under /index.html
-  app: festim-gui
+  cmd:
+    - /opt/paraview/bin/pvpython
+    - --venv
+    - /deploy/server/venv
+    - -m
+    - festim_gui.app
+    - --host
+    - ${host}
+    - --port
+    - ${port}
+    - --authKey
+    - ${secret}
+    - --server
+
 festim-gui: # /festim-gui.html
   app: festim-gui
