@@ -1,8 +1,9 @@
 import asyncio
 
-from trame.app.dataclass import StateDataModel, Sync, watch
+from trame.app.dataclass import StateDataModel, Sync
 from trame.ui.html import DivLayout
 from trame.widgets import html
+from trame.widgets import xterm
 from trame.widgets import vuetify3 as v3
 
 from festim_gui.execution import ScriptExecutionManager
@@ -33,18 +34,9 @@ class RunPageState(StateDataModel):
     output_dir = Sync(str, "")
     log_path = Sync(str, "")
     return_code = Sync(str, "")
-    started_at = Sync(str, "")
-    finished_at = Sync(str, "")
-    status = Sync(str, "idle")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
     status_message = Sync(str, "Ready to execute the generated script.")
-
-    @watch("status", sync=True)
-    def _sync_status_display(self, status: str) -> None:
-        label, color = RUN_STATUS_METADATA[status]
-        self.status_label = label
-        self.status_color = color
 
 
 class RunPage(Page):
@@ -57,13 +49,19 @@ class RunPage(Page):
         self.config = RunPageState(server)
         self._pages = pages
         self._execution = ScriptExecutionManager()
+        self._terminal = None  # set by build_ui()
 
         server.controller.on_server_ready.add_task(self._monitor_execution_events)
 
         self.build_ui()
 
     def _set_run_status(self, status: str, message: str) -> None:
-        self.config.update(status=status, status_message=message)
+        label, color = RUN_STATUS_METADATA[status]
+        self.config.update(
+            status_label=label,
+            status_color=color,
+            status_message=message,
+        )
 
     def _reset_run_state(self) -> None:
         self.config.update(
@@ -72,9 +70,14 @@ class RunPage(Page):
             output_dir="",
             log_path="",
             return_code="",
-            started_at="",
-            finished_at="",
         )
+        self._terminal.clear()
+
+    def _sync_terminal_from_state(self) -> None:
+        self._terminal.clear()
+        if self.config.log_tail:
+            self._terminal.write(self.config.log_tail)
+        self._terminal.fit()
 
     def _run_simulation(self) -> None:
         if self._execution.is_running:
@@ -88,32 +91,31 @@ class RunPage(Page):
             self._execution.start(build_script(self._pages, include_header=True))
         except Exception as exc:
             self.config.log_tail = f"[festim-gui] {exc}\n"
+            self._sync_terminal_from_state()
             self._set_run_status("failed", str(exc))
 
     async def _monitor_execution_events(self, **_kwargs) -> None:
         while True:
             events = self._execution.drain_events()
+            log_text = ""
             for event in events:
                 if event.kind == "started":
                     self.config.is_active = True
                     self.config.output_dir = event.output_dir
                     self.config.log_path = event.log_path
-                    self.config.started_at = event.timestamp
                     self._set_run_status(
                         "running",
                         "Simulation is running. Log view shows the live tail.",
                     )
 
                 elif event.kind in ("log", "error"):
-                    self.config.log_tail = _append_log_tail(
-                        self.config.log_tail,
-                        event.text,
-                    )
+                    log_text += event.text
 
                 elif event.kind == "finished":
                     self.config.is_active = False
-                    self.config.finished_at = event.timestamp
-                    self.config.return_code = str(event.return_code) if event.return_code is not None else ""
+                    self.config.return_code = (
+                        str(event.return_code) if event.return_code is not None else ""
+                    )
                     if event.return_code == 0:
                         self._set_run_status(
                             "succeeded",
@@ -126,6 +128,10 @@ class RunPage(Page):
                             else "Simulation was interrupted."
                         )
                         self._set_run_status("failed", msg)
+
+            if log_text:
+                self.config.log_tail = _append_log_tail(self.config.log_tail, log_text)
+                self._terminal.write(log_text)
 
             await asyncio.sleep(0.1)
 
@@ -179,15 +185,26 @@ class RunPage(Page):
                         with v3.VSheet(
                             border=True,
                             rounded="lg",
-                            classes="pa-3 overflow-y-auto",
-                            style="background-color: #111111; min-height: 280px; max-height: 420px;",
+                            classes="pa-0 overflow-hidden",
+                            style="background-color: #111111; min-height: 280px; height: 420px;",
                         ):
-                            html.Pre(
-                                "{{ run_config.log_tail || 'No log output yet.' }}",
-                                style=(
-                                    "margin: 0; white-space: pre-wrap; word-break: break-word; "
-                                    "font-family: monospace; font-size: 0.875rem; color: #d4d4d4;"
-                                ),
+                            self._terminal = xterm.XTerm(
+                                options="""
+                                {
+                                  disableStdin: true,
+                                  cursorBlink: false,
+                                  convertEol: true,
+                                  fontFamily: 'Menlo, Monaco, Consolas, monospace',
+                                  fontSize: 13,
+                                  theme: {
+                                    background: '#111111',
+                                    foreground: '#d4d4d4',
+                                    cursor: '#d4d4d4'
+                                  }
+                                }
+                                """,
+                                opened=self._sync_terminal_from_state,
+                                style="width: 100%; height: 100%; padding: 8px;",
                             )
 
     @property

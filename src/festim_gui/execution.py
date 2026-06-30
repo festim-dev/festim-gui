@@ -5,7 +5,6 @@ import sys
 import tempfile
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 FESTIM_GUI_TMP_ENV_VAR = "FESTIM_GUI_TMP"
@@ -14,31 +13,26 @@ FESTIM_GUI_TMP_ENV_VAR = "FESTIM_GUI_TMP"
 @dataclass(slots=True)
 class ExecutionEvent:
     kind: str
-    run_id: str
     text: str = ""
     output_dir: str = ""
     log_path: str = ""
     return_code: int | None = None
-    timestamp: str = ""
 
 
 @dataclass(slots=True)
 class ActiveRun:
-    run_id: str
     output_dir: Path
-    script_path: Path
     log_path: Path
     process: subprocess.Popen
-    started_at: str
-
-
-def _timestamp() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def resolve_run_root() -> Path:
     configured_root = os.environ.get(FESTIM_GUI_TMP_ENV_VAR)
-    run_root = Path(configured_root).expanduser() if configured_root else Path(tempfile.gettempdir())
+    run_root = (
+        Path(configured_root).expanduser()
+        if configured_root
+        else Path(tempfile.gettempdir())
+    )
     run_root.mkdir(parents=True, exist_ok=True)
 
     if not os.access(run_root, os.W_OK | os.X_OK):
@@ -46,10 +40,6 @@ def resolve_run_root() -> Path:
         raise RuntimeError(msg)
 
     return run_root
-
-
-def create_run_dir(run_root: Path) -> Path:
-    return Path(tempfile.mkdtemp(prefix="festim-gui-", dir=run_root))
 
 
 class ScriptExecutionManager:
@@ -78,7 +68,7 @@ class ScriptExecutionManager:
                 raise RuntimeError(msg)
 
             run_root = resolve_run_root()
-            run_dir = create_run_dir(run_root)
+            run_dir = Path(tempfile.mkdtemp(prefix="festim-gui-", dir=run_root))
             script_path = run_dir / "generated.py"
             log_path = run_dir / "run.log"
             script_path.write_text(script_text, encoding="utf-8")
@@ -93,22 +83,17 @@ class ScriptExecutionManager:
             )
 
             run = ActiveRun(
-                run_id=run_dir.name,
                 output_dir=run_dir,
-                script_path=script_path,
                 log_path=log_path,
                 process=process,
-                started_at=_timestamp(),
             )
             self._active_run = run
 
         self._event_queue.put(
             ExecutionEvent(
                 kind="started",
-                run_id=run.run_id,
                 output_dir=str(run.output_dir),
                 log_path=str(run.log_path),
-                timestamp=run.started_at,
             )
         )
 
@@ -132,7 +117,6 @@ class ScriptExecutionManager:
                     self._event_queue.put(
                         ExecutionEvent(
                             kind="log",
-                            run_id=run.run_id,
                             text=line,
                         )
                     )
@@ -142,7 +126,6 @@ class ScriptExecutionManager:
             self._event_queue.put(
                 ExecutionEvent(
                     kind="error",
-                    run_id=run.run_id,
                     text=f"[festim-gui] {exc}\n",
                 )
             )
@@ -154,11 +137,9 @@ class ScriptExecutionManager:
             self._event_queue.put(
                 ExecutionEvent(
                     kind="finished",
-                    run_id=run.run_id,
                     output_dir=str(run.output_dir),
                     log_path=str(run.log_path),
                     return_code=return_code,
-                    timestamp=_timestamp(),
                 )
             )
 
