@@ -74,7 +74,7 @@ class ScriptExecutionManager:
             script_path.write_text(script_text, encoding="utf-8")
 
             process = subprocess.Popen(
-                [sys.executable, "-u", script_path.name],
+                ["conda", "run", "python", "-u", script_path.name],
                 cwd=run_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
