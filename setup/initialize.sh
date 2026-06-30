@@ -4,4 +4,4 @@
 conda install -y -c conda-forge festim matplotlib fenics-dolfinx
 
 # Install app from local directory
-python -m pip install /local-app
+python -m pip install -e /local-app
