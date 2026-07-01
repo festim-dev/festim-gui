@@ -8,6 +8,7 @@ from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import Navigation, PageNavigationBar, ScriptEditor
 from festim_gui.pages import create_pages
+from festim_gui.post_processing import PostProcessing
 from festim_gui.utils.script_builder import build_script
 
 
@@ -17,6 +18,8 @@ class FestimGUI(TrameApp):
 
         self.state.trame__title = "FESTIM Script Modeler"
         self.pages = create_pages(self.server)
+
+        self.post_processing = PostProcessing(self.server)
 
         for page in self.pages:
             page.register_script_change_callback(self._refresh_script)

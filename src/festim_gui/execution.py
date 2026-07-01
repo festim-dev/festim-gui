@@ -1,13 +1,14 @@
+import json
 import os
 import queue
 import subprocess
-import sys
 import tempfile
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 FESTIM_GUI_TMP_ENV_VAR = "FESTIM_GUI_TMP"
+LATEST_RUN_RECORD_NAME = "latest-run.json"
 
 
 @dataclass(slots=True)
@@ -16,6 +17,7 @@ class ExecutionEvent:
     text: str = ""
     output_dir: str = ""
     log_path: str = ""
+    vtx_paths: list = field(default_factory=list)
     return_code: int | None = None
 
 
@@ -40,6 +42,28 @@ def resolve_run_root() -> Path:
         raise RuntimeError(msg)
 
     return run_root
+
+
+def write_latest_run_record(
+    output_dir: Path,
+    log_path: Path,
+    vtx_paths: list[str],
+    return_code: int | None,
+) -> None:
+    record = {
+        "output_dir": str(output_dir),
+        "log_path": str(log_path),
+        "vtx_paths": vtx_paths,
+        "return_code": return_code,
+    }
+    (resolve_run_root() / LATEST_RUN_RECORD_NAME).write_text(json.dumps(record), encoding="utf-8")
+
+
+def read_latest_run_record() -> dict | None:
+    record_path = resolve_run_root() / LATEST_RUN_RECORD_NAME
+    if not record_path.is_file():
+        return None
+    return json.loads(record_path.read_text(encoding="utf-8"))
 
 
 class ScriptExecutionManager:
@@ -74,7 +98,7 @@ class ScriptExecutionManager:
             script_path.write_text(script_text, encoding="utf-8")
 
             process = subprocess.Popen(
-                ["conda", "run", "python", "-u", script_path.name],
+                ["python", "-u", script_path.name],
                 cwd=run_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -134,11 +158,21 @@ class ScriptExecutionManager:
             if run.process.stdout is not None:
                 run.process.stdout.close()
 
+            vtx_paths = find_vtx_dirs(run.output_dir) if return_code == 0 else []
+            if return_code is not None:
+                write_latest_run_record(
+                    output_dir=run.output_dir,
+                    log_path=run.log_path,
+                    vtx_paths=vtx_paths,
+                    return_code=return_code,
+                )
+
             self._event_queue.put(
                 ExecutionEvent(
                     kind="finished",
                     output_dir=str(run.output_dir),
                     log_path=str(run.log_path),
+                    vtx_paths=vtx_paths,
                     return_code=return_code,
                 )
             )
@@ -146,3 +180,7 @@ class ScriptExecutionManager:
             with self._lock:
                 if self._active_run is run:
                     self._active_run = None
+
+
+def find_vtx_dirs(run_dir: Path) -> list[str]:
+    return [str(p) for p in sorted(run_dir.rglob("*.bp")) if p.is_dir()]

@@ -33,6 +33,7 @@ class RunPageState(StateDataModel):
     log_tail = Sync(str, "")
     output_dir = Sync(str, "")
     log_path = Sync(str, "")
+    post_processing_available = Sync(bool, False)
     return_code = Sync(str, "")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
@@ -69,6 +70,7 @@ class RunPage(Page):
             log_tail="",
             output_dir="",
             log_path="",
+            post_processing_available=False,
             return_code="",
         )
         self._terminal.clear()
@@ -117,9 +119,15 @@ class RunPage(Page):
                         str(event.return_code) if event.return_code is not None else ""
                     )
                     if event.return_code == 0:
+                        self.config.post_processing_available = bool(event.vtx_paths)
+                        suffix = (
+                            " Post-processing output is available."
+                            if event.vtx_paths
+                            else " No VTX export was found for post-processing."
+                        )
                         self._set_run_status(
                             "succeeded",
-                            "Simulation completed successfully.",
+                            f"Simulation completed successfully.{suffix}",
                         )
                     else:
                         msg = (
@@ -181,6 +189,13 @@ class RunPage(Page):
                             "Exit code: {{ run_config.return_code }}",
                             classes="text-caption text-medium-emphasis",
                             v_if=("run_config.return_code !== ''",),
+                        )
+                        v3.VBtn(
+                            "Open post-processing",
+                            prepend_icon="mdi-open-in-new",
+                            variant="outlined",
+                            click="window.open('?ui=post-processing', '_blank', 'noopener,noreferrer')",
+                            v_if=("run_config.post_processing_available", False),
                         )
                         with v3.VSheet(
                             border=True,
