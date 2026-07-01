@@ -196,14 +196,18 @@ class PostProcessing:
         for p in vtx_dirs:
             path = Path(p)
             try:
-                ctime = datetime.fromtimestamp(path.stat().st_ctime).strftime("%Y-%m-%d %H:%M")
+                ctime = datetime.fromtimestamp(path.stat().st_ctime).strftime(
+                    "%Y-%m-%d %H:%M"
+                )
             except OSError:
                 ctime = "unknown"
-            vtx_items.append({
-                "title": path.name,
-                "subtitle": f"{path.parent.parent.name}  ·  {ctime}",
-                "value": p,
-            })
+            vtx_items.append(
+                {
+                    "title": path.name,
+                    "subtitle": f"{path.parent.parent.name}  ·  {ctime}",
+                    "value": p,
+                }
+            )
         self.state.post_processing_vtx_items = vtx_items
         if self.state.post_processing_selected_vtx not in vtx_dirs:
             self.state.post_processing_selected_vtx = vtx_dirs[0]

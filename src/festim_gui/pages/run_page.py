@@ -2,8 +2,7 @@ import asyncio
 
 from trame.app.dataclass import StateDataModel, Sync
 from trame.ui.html import DivLayout
-from trame.widgets import html
-from trame.widgets import xterm
+from trame.widgets import html, xterm
 from trame.widgets import vuetify3 as v3
 
 from festim_gui.execution import ScriptExecutionManager

@@ -56,7 +56,9 @@ def write_latest_run_record(
         "vtx_paths": vtx_paths,
         "return_code": return_code,
     }
-    (resolve_run_root() / LATEST_RUN_RECORD_NAME).write_text(json.dumps(record), encoding="utf-8")
+    (resolve_run_root() / LATEST_RUN_RECORD_NAME).write_text(
+        json.dumps(record), encoding="utf-8"
+    )
 
 
 def read_latest_run_record() -> dict | None:
