@@ -1,63 +1,100 @@
+import asyncio
 from datetime import datetime
-from itertools import pairwise
 from pathlib import Path
 
+from paraview import simple
+from trame.app import TrameApp, asynchronous
+from trame.decorators import change
 from trame.ui.vuetify3 import SinglePageLayout
 from trame.widgets import html
-from trame.widgets import paraview as pv_widgets
+from trame.widgets import paraview as pvw
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.execution import find_vtx_dirs, resolve_run_root
-
-try:
-    from paraview import simple
-except ModuleNotFoundError:
-    simple = None
+from festim_gui.execution import find_vtx_dirs, read_latest_run_record
 
 
-class PostProcessing:
-    def __init__(self, server):
-        self.server = server
-        self.state = server.state
-        self.view = None
-        self.source = None
-        self.display = None
-        self.html_view = None
-        self.scene = None
-        self.current_vtx_path = ""
+class PostProcessing(TrameApp):
+    def __init__(self, server=None, template_name="post-processing"):
+        super().__init__(server)
 
-        self._reset_controls()
-        self.state.post_processing_status_message = (
-            "Open this page after a successful run to inspect the latest VTX output."
+        pvw.initialize(self.server)
+        v3.initialize(self.server)
+
+        self.state.pv_file_items = []
+        self.state.pv_selected_file = None
+
+        available_files = self._resolve_available_files()
+        self.state.pv_file_items = [
+            self._build_file_item(path) for path in available_files
+        ]
+        initial_file = available_files[0] if available_files else None
+
+        self._setup_pv(initial_file)
+        self._build_ui(template_name)
+        self.state.pv_selected_file = initial_file
+        if initial_file and self.ctx.view:
+            self.ctx.view.reset_camera()
+            self.ctx.view.update()
+
+    def _resolve_available_files(self):
+        latest_run = read_latest_run_record()
+        if latest_run is None:
+            return []
+
+        vtx_paths = latest_run.get("vtx_paths") or []
+        if not vtx_paths and latest_run.get("output_dir"):
+            vtx_paths = find_vtx_dirs(Path(latest_run["output_dir"]))
+
+        return [str(Path(path).resolve()) for path in vtx_paths]
+
+    def _build_file_item(self, file_path):
+        path = Path(file_path)
+        try:
+            created = datetime.fromtimestamp(path.stat().st_ctime).strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        except OSError:
+            created = "unknown"
+
+        run_name = path.parent.parent.name or path.parent.name
+        return {
+            "title": path.name,
+            "subtitle": f"{run_name}  ·  {created}",
+            "value": str(path),
+        }
+
+    def _setup_pv(self, file_to_load):
+        self.times = []
+        self.animation_scene = simple.GetAnimationScene()
+
+        self.reader = None
+        self.representation = None
+        self.view = simple.GetActiveViewOrCreate("RenderView")
+        self.view.Set(
+            OrientationAxesVisibility=1,
+            Background=[0.12, 0.12, 0.12],
         )
 
-        if simple is not None:
-            self.view = simple.GetActiveViewOrCreate("RenderView")
-            self.scene = simple.GetAnimationScene()
-            self.view.OrientationAxesVisibility = 0
-            self.view.Background = [0.12, 0.12, 0.12]
-            self.view.UseColorPaletteForBackground = 0
+        if file_to_load:
+            self.load_file(file_to_load)
 
-        self._build_ui()
-        self.state.change("post_processing_selected_vtx")(self._on_vtx_file_selected)
-        self.state.change("post_processing_selected_array")(self._on_array_selected)
-        self.state.change("post_processing_time")(self._on_time_changed)
-        self.server.controller.on_server_ready.add(self.reload)
+    def load_file(self, file_path):
+        file_path = Path(file_path).resolve()
+        if not file_path.exists():
+            if self.representation is not None:
+                self.representation.Visibility = 0
+            return
 
-    def _clear_pipeline(self):
-        if self.display is not None:
-            simple.Hide(self.source, self.view)
-            self.display = None
+        if self.reader is None:
+            self.reader = simple.ADIOS2VTXReader(FileName=str(file_path))
+            self.representation = simple.Show(self.reader, self.view)
+        else:
+            self.reader.FileName = str(file_path)
+            simple.ReloadFiles(self.reader)
 
-        if self.source is not None:
-            simple.Delete(self.source)
-            self.source = None
-
-        self.current_vtx_path = ""
-
-    def _read_arrays(self):
-        arrays = {}
-        data_info = self.source.GetDataInformation()
+        self.reader.UpdatePipeline()
+        data_info = self.reader.GetDataInformation()
+        options = []
         for data_set, location in (
             (data_info.GetPointDataInformation(), "POINTS"),
             (data_info.GetCellDataInformation(), "CELLS"),
@@ -66,177 +103,148 @@ class PostProcessing:
                 array = data_set.GetArrayInformation(index)
                 if array is None or not array.GetName():
                     continue
-                label = f"{location}: {array.GetName()}"
-                arrays[label] = (location, array.GetName())
-        return arrays
+                name = array.GetName()
+                options.append({"title": name, "value": f"{location}:::{name}"})
 
-    def _render(self):
-        if self.view is None:
+        self.times = self.reader.TimestepValues
+        self.state.pv_time_idx_max = len(self.times) - 1
+        self.state.pv_time_idx = 0
+
+        self.state.pv_color_options = options
+        self.representation.Visibility = 1
+        self.representation.SetScalarBarVisibility(self.view, True)
+
+        self.view.ResetCamera()
+        if self.ctx.view:
+            self.ctx.view.reset_camera()
+
+    def reset_color_range(self):
+        self.representation.RescaleTransferFunctionToDataRange(True, False)
+        self.ctx.view.update()
+
+    @change("pv_time_idx")
+    def _on_time_change(self, pv_time_idx, **_):
+        if not self.times:
             return
 
-        self.view.Update()
-        if self.html_view is not None and self.server.protocol:
-            self.html_view.update()
+        if pv_time_idx < len(self.times):
+            self.state.time_value = self.times[pv_time_idx]
+            self.animation_scene.AnimationTime = self.state.time_value
 
-    def _color_by_array(self, label):
-        array_info = self.arrays.get(label)
-        if array_info is None or self.display is None:
+        self.ctx.view.update()
+
+    @change("pv_color_by")
+    def _on_color_by(self, pv_color_by, **_):
+        if self.representation is None:
             return
 
-        simple.ColorBy(self.display, array_info)
-        self.display.RescaleTransferFunctionToDataRange(True, False)
-        self.display.SetScalarBarVisibility(self.view, True)
+        if pv_color_by is None:
+            self.representation.ColorBy(("POINTS", None))
+        else:
+            self.representation.ColorBy(pv_color_by.split(":::"))
 
-    def _reset_controls(self):
-        self.arrays = {}
-        self.state.post_processing_vtx_items = []
-        self.state.post_processing_selected_vtx = ""
-        self.state.post_processing_array_items = []
-        self.state.post_processing_selected_array = ""
-        self.time_values = []
-        self.state.post_processing_time = 0.0
-        self.state.post_processing_time_min = 0.0
-        self.state.post_processing_time_max = 0.0
-        self.state.post_processing_time_step = 1.0
+        if self.ctx.view:
+            self.ctx.view.update()
 
-    def _go_to_time(self, time_val: float):
-        if not self.time_values or self.scene is None:
-            return
-        nearest = min(self.time_values, key=lambda t: abs(t - time_val))
-        self.scene.TimeKeeper.Time = nearest
-        self.state.post_processing_time = nearest
-
-    def _on_vtx_file_selected(self, post_processing_selected_vtx, **_kwargs):
-        if post_processing_selected_vtx and self.view is not None:
-            self._load_vtx(post_processing_selected_vtx)
-
-    def _on_array_selected(self, post_processing_selected_array, **_kwargs):
-        self._color_by_array(post_processing_selected_array)
-        self._render()
-
-    def _on_time_changed(self, post_processing_time, **_kwargs):
-        self._go_to_time(float(post_processing_time))
-        self._render()
-
-    def _update_display(self, vtx_dir):
-        self.source.UpdatePipeline()
-        if self.scene is not None:
-            self.scene.UpdateAnimationUsingDataTimeSteps()
-            self.time_values = list(self.scene.TimeKeeper.TimestepValues)
-            if self.time_values:
-                self.state.post_processing_time_min = self.time_values[0]
-                self.state.post_processing_time_max = self.time_values[-1]
-                if len(self.time_values) > 1:
-                    self.state.post_processing_time_step = min(
-                        b - a for a, b in pairwise(self.time_values)
-                    )
-
-        self.arrays = self._read_arrays()
-        array_items = list(self.arrays)
-        self.state.post_processing_array_items = array_items
-
-        active_array = self.state.post_processing_selected_array
-        if active_array not in self.arrays:
-            active_array = array_items[0] if array_items else ""
-            self.state.post_processing_selected_array = active_array
-
-        self._go_to_time(self.time_values[0] if self.time_values else 0.0)
-        self._color_by_array(active_array)
-        self._render()
-        self.state.post_processing_status_message = f"Displaying {vtx_dir.name}."
-
-    def _load_vtx(self, vtx_path):
-        vtx_dir = Path(vtx_path)
-        if not vtx_dir.is_dir():
-            self._reset_controls()
-            self.state.post_processing_status_message = (
-                "The recorded VTX output path no longer exists on disk."
-            )
+    @change("pv_selected_file")
+    def _on_file_selected(self, pv_selected_file, **_):
+        if not pv_selected_file or self.view is None:
             return
 
-        if (
-            self.source is None
-            or self.display is None
-            or self.current_vtx_path != vtx_path
-        ):
-            self._clear_pipeline()
-            self.source = simple.ADIOS2VTXReader(
-                registrationName=vtx_dir.name,
-                FileName=str(vtx_dir),
-            )
-            self.display = simple.Show(
-                self.source,
-                self.view,
-                "UnstructuredGridRepresentation",
-            )
-            self.display.Representation = "Surface"
-            self.current_vtx_path = vtx_path
-            self.view.ResetCamera(False, 0.9)
+        self.load_file(pv_selected_file)
+        if self.ctx.view:
+            self.ctx.view.update()
 
-        self._update_display(vtx_dir)
+    @change("pv_play")
+    def _on_play(self, pv_play, **_):
+        if pv_play:
+            asynchronous.create_task(self._animate())
 
-    def reload(self, **_kwargs):
-        vtx_dirs = find_vtx_dirs(resolve_run_root())
+    def view_action(self, action):
+        getattr(self.view, action)()
+        self.ctx.view.reset_camera()
 
-        if not vtx_dirs:
-            self._reset_controls()
-            self.state.post_processing_status_message = (
-                "No completed run with VTX output is available yet."
-            )
-            return
+    async def _animate(self):
+        while self.state.pv_play:
+            with self.state:
+                if self.state.pv_time_idx < self.state.pv_time_idx_max:
+                    self.state.pv_time_idx += 1
+                else:
+                    self.state.pv_time_idx = 0
+            await asyncio.sleep(0.1)
 
-        if self.view is None:
-            self._reset_controls()
-            self.state.post_processing_status_message = (
-                "Visualization is unavailable because ParaView is not installed."
-            )
-            return
-
-        vtx_items = []
-        for p in vtx_dirs:
-            path = Path(p)
-            try:
-                ctime = datetime.fromtimestamp(path.stat().st_ctime).strftime(
-                    "%Y-%m-%d %H:%M"
-                )
-            except OSError:
-                ctime = "unknown"
-            vtx_items.append(
-                {
-                    "title": path.name,
-                    "subtitle": f"{path.parent.parent.name}  ·  {ctime}",
-                    "value": p,
-                }
-            )
-        self.state.post_processing_vtx_items = vtx_items
-        if self.state.post_processing_selected_vtx not in vtx_dirs:
-            self.state.post_processing_selected_vtx = vtx_dirs[0]
-
-        self._load_vtx(self.state.post_processing_selected_vtx)
-
-    def _build_ui(self):
+    def _build_ui(self, template_name):
+        self.state.time_value = ""
         with SinglePageLayout(
-            self.server,
-            template_name="post-processing",
-            full_height=True,
-        ) as layout:
-            layout.icon.hide()
-            layout.title.set_text("Post Processing")
-            layout.footer.hide()
+            self.server, template_name=template_name, full_height=True
+        ) as self.ui:
+            with self.ui.content:
+                with v3.VContainer(
+                    fluid=True,
+                    classes="pa-0 h-100",
+                ):
+                    pvw.VtkRemoteView(self.view, interactive_ratio=1, ctx_name="view")
 
-            with layout.toolbar:
+            with self.ui.footer.clear() as footer:
+                footer.classes = "pa-0"
+                with v3.VCard(tile=True, flat=True, classes="w-100"):
+                    with v3.VCardItem(classes="py-0 px-2"):
+                        with v3.VRow(classes="d-flex align-center pa-0 ma-0"):
+                            v3.VLabel("t=", classes="text-h6")
+                            v3.VLabel("{{ time_value }}", classes="text-body-1")
+                            v3.VSpacer()
+                            v3.VBtn(
+                                icon="mdi-skip-previous",
+                                variant="plain",
+                                click="pv_time_idx = 0",
+                                density="compact",
+                            )
+                            v3.VBtn(
+                                icon="mdi-stop",
+                                variant="plain",
+                                click="pv_play=false",
+                                v_if=("pv_play", False),
+                                density="compact",
+                            )
+                            v3.VBtn(
+                                icon="mdi-play",
+                                variant="plain",
+                                click="pv_play=true",
+                                v_else=True,
+                                density="compact",
+                            )
+                            v3.VBtn(
+                                icon="mdi-skip-next",
+                                variant="plain",
+                                click="pv_time_idx = pv_time_idx_max",
+                                density="compact",
+                            )
+                    with v3.VCardItem(classes="pa-0"):
+                        v3.VSlider(
+                            v_model=("pv_time_idx", -1),
+                            min=0,
+                            step=1,
+                            max=("pv_time_idx_max", -1),
+                            hide_details=True,
+                            density="comfortable",
+                            classes="px-3 py-1",
+                        )
+
+            with self.ui.toolbar.clear() as toolbar:
+                toolbar.density = "comfortable"
+                v3.VToolbarTitle("Festim PostProcessor")
                 v3.VSpacer()
                 with v3.VSelect(
-                    v_model=("post_processing_selected_vtx", ""),
-                    items=("post_processing_vtx_items", []),
                     label="File",
+                    v_model=("pv_selected_file", None),
+                    items=("pv_file_items", []),
                     item_title="title",
                     item_value="value",
-                    hide_details=True,
                     density="compact",
+                    hide_details=True,
                     variant="outlined",
-                    style="max-width: 280px;",
-                    classes="mr-3",
+                    style="max-width: 320px;",
+                    classes="mx-2",
                 ):
                     with v3.Template(raw_attrs=['v-slot:item="{ props, item }"']):
                         v3.VListItem(
@@ -244,51 +252,49 @@ class PostProcessing:
                             subtitle=("item.raw.subtitle",),
                         )
                 v3.VSelect(
-                    v_model=("post_processing_selected_array", ""),
-                    items=("post_processing_array_items", []),
-                    label="Variable",
-                    hide_details=True,
+                    label="Color By",
+                    v_model=("pv_color_by", None),
+                    items=("pv_color_options", []),
                     density="compact",
-                    variant="outlined",
-                    style="max-width: 280px;",
-                    classes="mr-3",
-                )
-                html.Div(
-                    "t = {{ post_processing_time }}",
-                    classes="text-caption text-medium-emphasis mr-3",
-                )
-                v3.VSlider(
-                    v_model=("post_processing_time", 0),
-                    min=("post_processing_time_min", 0),
-                    max=("post_processing_time_max", 0),
-                    step=("post_processing_time_step", 1),
                     hide_details=True,
-                    density="compact",
-                    style="max-width: 240px;",
-                    classes="mr-3",
-                )
-                v3.VBtn(
-                    "Refresh",
-                    prepend_icon="mdi-refresh",
                     variant="outlined",
-                    click=self.reload,
+                    style="max-width: 250px;",
+                    classes="mx-2",
                 )
 
-            with layout.content:
-                with v3.VContainer(
-                    fluid=True,
-                    classes="pa-0 fill-height",
-                    style="background-color: #111111;",
-                ):
-                    if self.view is None:
-                        with html.Div(
-                            classes="d-flex align-center justify-center fill-height",
-                            style="color: #d4d4d4;",
-                        ):
-                            html.Div(
-                                "{{ post_processing_status_message }}",
-                                classes="text-body-1",
-                                style="white-space: pre-wrap; max-width: 600px;",
-                            )
-                    else:
-                        self.html_view = pv_widgets.VtkLocalView(self.view)
+                with html.Div(classes="d-flex ga-2 mx-2"):
+                    v3.VBtn(
+                        icon="mdi-arrow-expand-horizontal",
+                        click=self.reset_color_range,
+                        classes="rounded",
+                        density="compact",
+                    )
+                    v3.VBtn(
+                        icon="mdi-axis-x-arrow",
+                        click=(self.view_action, "['ResetActiveCameraToPositiveX']"),
+                        classes="rounded",
+                        density="compact",
+                    )
+                    v3.VBtn(
+                        icon="mdi-axis-y-arrow",
+                        click=(self.view_action, "['ResetActiveCameraToPositiveY']"),
+                        classes="rounded",
+                        density="compact",
+                    )
+                    v3.VBtn(
+                        icon="mdi-axis-z-arrow",
+                        click=(self.view_action, "['ResetActiveCameraToPositiveZ']"),
+                        classes="rounded",
+                        density="compact",
+                    )
+                    v3.VBtn(
+                        icon="mdi-crop-free",
+                        click=self.ctx.view.reset_camera,
+                        classes="rounded",
+                        density="compact",
+                    )
+
+
+if __name__ == "__main__":
+    app = PostProcessing()
+    app.server.start()
