@@ -31,12 +31,10 @@ class RunPageState(StateDataModel):
     is_active = Sync(bool, False)
     log_tail = Sync(str, "")
     output_dir = Sync(str, "")
-    log_path = Sync(str, "")
     post_processing_available = Sync(bool, False)
     return_code = Sync(str, "")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
-    status_message = Sync(str, "Ready to execute the generated script.")
 
 
 class RunPage(Page):
@@ -55,12 +53,11 @@ class RunPage(Page):
 
         self.build_ui()
 
-    def _set_run_status(self, status: str, message: str) -> None:
+    def _set_run_status(self, status: str) -> None:
         label, color = RUN_STATUS_METADATA[status]
         self.config.update(
             status_label=label,
             status_color=color,
-            status_message=message,
         )
 
     def _reset_run_state(self) -> None:
@@ -68,7 +65,6 @@ class RunPage(Page):
             is_active=False,
             log_tail="",
             output_dir="",
-            log_path="",
             post_processing_available=False,
             return_code="",
         )
@@ -82,18 +78,18 @@ class RunPage(Page):
 
     def _run_simulation(self) -> None:
         if self._execution.is_running:
-            self._set_run_status("running", "A simulation is already running.")
+            self._set_run_status("running")
             return
 
         self._reset_run_state()
-        self._set_run_status("starting", "Launching simulation...")
+        self._set_run_status("starting")
 
         try:
             self._execution.start(build_script(self._pages, include_header=True))
         except Exception as exc:
             self.config.log_tail = f"[festim-gui] {exc}\n"
             self._sync_terminal_from_state()
-            self._set_run_status("failed", str(exc))
+            self._set_run_status("failed")
 
     async def _monitor_execution_events(self, **_kwargs) -> None:
         while True:
@@ -103,11 +99,7 @@ class RunPage(Page):
                 if event.kind == "started":
                     self.config.is_active = True
                     self.config.output_dir = event.output_dir
-                    self.config.log_path = event.log_path
-                    self._set_run_status(
-                        "running",
-                        "Simulation is running. Log view shows the live tail.",
-                    )
+                    self._set_run_status("running")
 
                 elif event.kind in ("log", "error"):
                     log_text += event.text
@@ -119,22 +111,9 @@ class RunPage(Page):
                     )
                     if event.return_code == 0:
                         self.config.post_processing_available = bool(event.vtx_paths)
-                        suffix = (
-                            " Post-processing output is available."
-                            if event.vtx_paths
-                            else " No VTX export was found for post-processing."
-                        )
-                        self._set_run_status(
-                            "succeeded",
-                            f"Simulation completed successfully.{suffix}",
-                        )
+                        self._set_run_status("succeeded")
                     else:
-                        msg = (
-                            f"Simulation failed with exit code {event.return_code}."
-                            if event.return_code is not None
-                            else "Simulation was interrupted."
-                        )
-                        self._set_run_status("failed", msg)
+                        self._set_run_status("failed")
 
             if log_text:
                 self.config.log_tail = _append_log_tail(self.config.log_tail, log_text)
@@ -143,83 +122,86 @@ class RunPage(Page):
             await asyncio.sleep(0.1)
 
     def build_ui(self) -> None:
-        with DivLayout(self.server, template_name=self.id):
+        with DivLayout(self.server, template_name=self.id) as layout:
+            layout.root.style = "height: 100%;"
             with self.config.provide_as("run_config"):
-                with v3.VCard(variant="outlined"):
-                    with v3.VCardText(classes="d-flex flex-column ga-3"):
-                        v3.VLabel("Run", classes="text-subtitle-2")
-                        v3.VLabel(
-                            "Run the full generated script in the current Python environment. "
-                            "The log panel shows a live tail while the full log is written to disk.",
-                            classes="text-body-2 text-medium-emphasis",
-                        )
-                        with v3.VRow(classes="ga-2 align-center"):
-                            with v3.VCol(cols="12", sm="auto"):
-                                v3.VBtn(
-                                    "Run simulation",
-                                    color="primary",
-                                    prepend_icon="mdi-play",
-                                    variant="flat",
-                                    click=self._run_simulation,
-                                    loading=("run_config.is_active", False),
-                                    disabled=("run_config.is_active", False),
-                                )
-                            with v3.VCol(cols="12", sm="auto"):
-                                v3.VChip(
-                                    "{{ run_config.status_label }}",
-                                    color=("run_config.status_color", "default"),
-                                    variant="tonal",
-                                )
-                        html.Div(
-                            "{{ run_config.status_message }}",
-                            classes="text-body-2",
-                        )
-                        html.Div(
-                            "Output directory: {{ run_config.output_dir }}",
-                            classes="text-caption",
-                            v_if=("run_config.output_dir",),
-                        )
-                        html.Div(
-                            "Log file: {{ run_config.log_path }}",
-                            classes="text-caption text-medium-emphasis",
-                            v_if=("run_config.log_path",),
-                        )
-                        html.Div(
-                            "Exit code: {{ run_config.return_code }}",
-                            classes="text-caption text-medium-emphasis",
-                            v_if=("run_config.return_code !== ''",),
-                        )
-                        v3.VBtn(
-                            "Open post-processing",
-                            prepend_icon="mdi-open-in-new",
-                            variant="outlined",
-                            click="window.open('?ui=post-processing', '_blank', 'noopener,noreferrer')",
-                            v_if=("run_config.post_processing_available", False),
-                        )
-                        with v3.VSheet(
-                            border=True,
-                            rounded="lg",
-                            classes="pa-0 overflow-hidden",
-                            style="background-color: #111111; min-height: 280px; height: 420px;",
-                        ):
-                            self._terminal = xterm.XTerm(
-                                options="""
-                                {
-                                  disableStdin: true,
-                                  cursorBlink: false,
-                                  convertEol: true,
-                                  fontFamily: 'Menlo, Monaco, Consolas, monospace',
-                                  fontSize: 13,
-                                  theme: {
-                                    background: '#111111',
-                                    foreground: '#d4d4d4',
-                                    cursor: '#d4d4d4'
-                                  }
-                                }
-                                """,
-                                opened=self._sync_terminal_from_state,
-                                style="width: 100%; height: 100%; padding: 8px;",
+                with v3.VCard(
+                    variant="outlined",
+                    classes="d-flex flex-column fill-height",
+                    style="height: 100%;",
+                ):
+                    with v3.VCardText(classes="d-flex flex-column fill-height"):
+                        with html.Div(classes="d-flex flex-column ga-3"):
+                            v3.VLabel("Run", classes="text-subtitle-2")
+
+                            v3.VLabel(
+                                "Run the full generated script in the current Python environment. "
+                                "The log panel shows a live tail while the full log is written to disk.",
+                                classes="text-body-2 text-medium-emphasis",
                             )
+                            with v3.VRow(classes="ga-2 align-center"):
+                                with v3.VCol(cols="12", sm="auto"):
+                                    v3.VBtn(
+                                        "Run simulation",
+                                        color="primary",
+                                        prepend_icon="mdi-play",
+                                        variant="flat",
+                                        click=self._run_simulation,
+                                        loading=("run_config.is_active", False),
+                                        disabled=("run_config.is_active", False),
+                                    )
+                                with v3.VCol(cols="12", sm="auto"):
+                                    v3.VChip(
+                                        "{{ run_config.status_label }}",
+                                        color=("run_config.status_color", "default"),
+                                        variant="tonal",
+                                    )
+                                v3.VSpacer()
+                                with v3.VCol(cols="12", sm="auto"):
+                                    v3.VBtn(
+                                        "Open post-processing",
+                                        color="primary",
+                                        prepend_icon="mdi-open-in-new",
+                                        variant="flat",
+                                        click="window.open('?ui=post-processing', '_blank', 'noopener,noreferrer')",
+                                        disabled=("!run_config.post_processing_available", True),
+                                    )
+                            html.Div(
+                                "Output directory: {{ run_config.output_dir }}",
+                                classes="text-caption",
+                                v_if=("run_config.output_dir",),
+                            )
+                            html.Div(
+                                "Exit code: {{ run_config.return_code }}",
+                                classes="text-caption text-medium-emphasis",
+                                v_if=("run_config.return_code !== ''",),
+                            )
+
+                        with html.Div(classes="mt-auto d-flex flex-column ga-3"):
+                            with v3.VSheet(
+                                border=True,
+                                rounded="lg",
+                                classes="pa-0 overflow-hidden",
+                                style="background-color: #111111; min-height: 320px; height: 530px;",
+                            ):
+                                self._terminal = xterm.XTerm(
+                                    options="""
+                                    {
+                                      disableStdin: true,
+                                      cursorBlink: false,
+                                      convertEol: true,
+                                      fontFamily: 'Menlo, Monaco, Consolas, monospace',
+                                      fontSize: 13,
+                                      theme: {
+                                        background: '#111111',
+                                        foreground: '#d4d4d4',
+                                        cursor: '#d4d4d4'
+                                      }
+                                    }
+                                    """,
+                                    opened=self._sync_terminal_from_state,
+                                    style="width: 100%; height: 100%; padding: 8px;",
+                                )
 
     @property
     def page_problem(self):
