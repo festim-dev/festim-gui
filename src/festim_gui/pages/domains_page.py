@@ -139,7 +139,7 @@ class DomainsPage(Page):
         self._remove_row("interface_rows")
 
     def _volume_ui(self) -> None:
-        with v3.VCard(variant="outlined"):
+        with v3.VCard(variant="outlined", classes="mb-4"):
             with v3.VCardText(classes="d-flex flex-column ga-3"):
                 v3.VLabel("Volume Subdomains", classes="text-subtitle-2")
                 RepeatedItemControls(
@@ -186,7 +186,7 @@ class DomainsPage(Page):
                         )
 
     def _surface_ui(self) -> None:
-        with v3.VCard(variant="outlined"):
+        with v3.VCard(variant="outlined", classes="mb-4"):
             with v3.VCardText(classes="d-flex flex-column ga-3"):
                 v3.VLabel("Surface Subdomains", classes="text-subtitle-2")
                 RepeatedItemControls(
@@ -233,7 +233,7 @@ class DomainsPage(Page):
                         )
 
     def _interface_ui(self) -> None:
-        with v3.VCard(variant="outlined"):
+        with v3.VCard(variant="outlined", classes="mb-4"):
             with v3.VCardText(classes="d-flex flex-column ga-3"):
                 v3.VLabel("Interfaces", classes="text-subtitle-2")
                 RepeatedItemControls(
@@ -283,7 +283,7 @@ class DomainsPage(Page):
     def build_ui(self) -> None:
         with DivLayout(self.server, template_name=self.id):
             with self.config.provide_as("domains_config"):
-                with v3.VCard(variant="outlined"):
+                with v3.VCard(variant="outlined", classes="mb-4"):
                     with v3.VCardText(classes="d-flex flex-column ga-3"):
                         v3.VTextField(
                             v_model="domains_config.domains_eps",

@@ -122,15 +122,12 @@ class RunPage(Page):
             await asyncio.sleep(0.1)
 
     def build_ui(self) -> None:
-        with DivLayout(self.server, template_name=self.id) as layout:
-            layout.root.style = "height: 100%;"
+        with DivLayout(self.server, template_name=self.id):
             with self.config.provide_as("run_config"):
                 with v3.VCard(
-                    variant="outlined",
-                    classes="d-flex flex-column fill-height",
-                    style="height: 100%;",
+                    variant="outlined", loading=("run_config.is_active", False)
                 ):
-                    with v3.VCardText(classes="d-flex flex-column fill-height"):
+                    with v3.VCardText(classes="d-flex flex-column ga-4"):
                         with html.Div(classes="d-flex flex-column ga-3"):
                             v3.VLabel("Run", classes="text-subtitle-2")
 
@@ -164,44 +161,51 @@ class RunPage(Page):
                                         prepend_icon="mdi-open-in-new",
                                         variant="flat",
                                         click="window.open('?ui=post-processing', '_blank', 'noopener,noreferrer')",
-                                        disabled=("!run_config.post_processing_available", True),
+                                        disabled=(
+                                            "!run_config.post_processing_available",
+                                            True,
+                                        ),
                                     )
-                            html.Div(
-                                "Output directory: {{ run_config.output_dir }}",
-                                classes="text-caption",
-                                v_if=("run_config.output_dir",),
-                            )
-                            html.Div(
-                                "Exit code: {{ run_config.return_code }}",
-                                classes="text-caption text-medium-emphasis",
-                                v_if=("run_config.return_code !== ''",),
-                            )
 
-                        with html.Div(classes="mt-auto d-flex flex-column ga-3"):
-                            with v3.VSheet(
-                                border=True,
-                                rounded="lg",
-                                classes="pa-0 overflow-hidden",
-                                style="background-color: #111111; min-height: 320px; height: 530px;",
+                            with html.Div(
+                                classes="d-flex flex-column ga-1",
+                                style="min-height: 3rem;",
                             ):
-                                self._terminal = xterm.XTerm(
-                                    options="""
-                                    {
-                                      disableStdin: true,
-                                      cursorBlink: false,
-                                      convertEol: true,
-                                      fontFamily: 'Menlo, Monaco, Consolas, monospace',
-                                      fontSize: 13,
-                                      theme: {
-                                        background: '#111111',
-                                        foreground: '#d4d4d4',
-                                        cursor: '#d4d4d4'
-                                      }
-                                    }
-                                    """,
-                                    opened=self._sync_terminal_from_state,
-                                    style="width: 100%; height: 100%; padding: 8px;",
+                                html.Div(
+                                    "Output directory: {{ run_config.output_dir }}",
+                                    classes="text-caption",
+                                    v_if=("run_config.output_dir",),
                                 )
+                                html.Div(
+                                    "Exit code: {{ run_config.return_code }}",
+                                    classes="text-caption text-medium-emphasis",
+                                    v_if=("run_config.return_code !== ''",),
+                                )
+
+                        with v3.VSheet(
+                            border=True,
+                            rounded="lg",
+                            classes="pa-0 overflow-hidden",
+                            style="background-color: #111111; min-height: 260px; height: 420px;",
+                        ):
+                            self._terminal = xterm.XTerm(
+                                options="""
+                                {
+                                  disableStdin: true,
+                                  cursorBlink: false,
+                                  convertEol: true,
+                                  fontFamily: 'Menlo, Monaco, Consolas, monospace',
+                                  fontSize: 13,
+                                  theme: {
+                                    background: '#111111',
+                                    foreground: '#d4d4d4',
+                                    cursor: '#d4d4d4'
+                                  }
+                                }
+                                """,
+                                opened=self._sync_terminal_from_state,
+                                style="width: 100%; height: 100%; padding: 8px;",
+                            )
 
     @property
     def page_problem(self):

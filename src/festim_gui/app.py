@@ -84,10 +84,12 @@ class FestimGUI(TrameApp):
                         classes="d-flex flex-column",
                         style="height: calc(100vh - 32px); min-height: 0;",
                     ):
-                        with html.Div(classes="flex-grow-1 d-flex flex-column pr-1"):
+
+                        with html.Div(
+                            classes="flex-grow-1 min-h-0 overflow-y-auto pr-1"
+                        ):
                             PageNavigationBar(self.pages)
-                            with html.Div(classes="flex-grow-1 overflow-y-auto min-h-0"):
-                                client.ServerTemplate(name=("page_name", self.pages[0].id))
+                            client.ServerTemplate(name=("page_name", self.pages[0].id))
 
                         with html.Div(classes="pt-3 mt-auto"):
                             Navigation(
