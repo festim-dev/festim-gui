@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 from pathlib import Path
 
 from paraview import simple
@@ -20,48 +19,23 @@ class PostProcessing(TrameApp):
         pvw.initialize(self.server)
         v3.initialize(self.server)
 
-        self.state.pv_file_items = []
-        self.state.pv_selected_file = None
-
-        available_files = self._resolve_available_files()
-        self.state.pv_file_items = [
-            self._build_file_item(path) for path in available_files
-        ]
-        initial_file = available_files[0] if available_files else None
-
+        initial_file = self._resolve_latest_file()
         self._setup_pv(initial_file)
         self._build_ui(template_name)
-        self.state.pv_selected_file = initial_file
         if initial_file and self.ctx.view:
             self.ctx.view.reset_camera()
             self.ctx.view.update()
 
-    def _resolve_available_files(self):
+    def _resolve_latest_file(self):
         latest_run = read_latest_run_record()
         if latest_run is None:
-            return []
+            return None
 
         vtx_paths = latest_run.get("vtx_paths") or []
         if not vtx_paths and latest_run.get("output_dir"):
             vtx_paths = find_vtx_dirs(Path(latest_run["output_dir"]))
 
-        return [str(Path(path).resolve()) for path in vtx_paths]
-
-    def _build_file_item(self, file_path):
-        path = Path(file_path)
-        try:
-            created = datetime.fromtimestamp(path.stat().st_ctime).strftime(
-                "%Y-%m-%d %H:%M"
-            )
-        except OSError:
-            created = "unknown"
-
-        run_name = path.parent.parent.name or path.parent.name
-        return {
-            "title": path.name,
-            "subtitle": f"{run_name}  ·  {created}",
-            "value": str(path),
-        }
+        return str(Path(vtx_paths[0]).resolve()) if vtx_paths else None
 
     def _setup_pv(self, file_to_load):
         self.times = []
@@ -146,15 +120,6 @@ class PostProcessing(TrameApp):
         if self.ctx.view:
             self.ctx.view.update()
 
-    @change("pv_selected_file")
-    def _on_file_selected(self, pv_selected_file, **_):
-        if not pv_selected_file or self.view is None:
-            return
-
-        self.load_file(pv_selected_file)
-        if self.ctx.view:
-            self.ctx.view.update()
-
     @change("pv_play")
     def _on_play(self, pv_play, **_):
         if pv_play:
@@ -234,23 +199,6 @@ class PostProcessing(TrameApp):
                 toolbar.density = "comfortable"
                 v3.VToolbarTitle("Festim PostProcessor")
                 v3.VSpacer()
-                with v3.VSelect(
-                    label="File",
-                    v_model=("pv_selected_file", None),
-                    items=("pv_file_items", []),
-                    item_title="title",
-                    item_value="value",
-                    density="compact",
-                    hide_details=True,
-                    variant="outlined",
-                    style="max-width: 320px;",
-                    classes="mx-2",
-                ):
-                    with v3.Template(raw_attrs=['v-slot:item="{ props, item }"']):
-                        v3.VListItem(
-                            v_bind="props",
-                            subtitle=("item.raw.subtitle",),
-                        )
                 v3.VSelect(
                     label="Color By",
                     v_model=("pv_color_by", None),
