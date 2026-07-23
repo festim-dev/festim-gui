@@ -4,10 +4,10 @@ import queue
 import subprocess
 import tempfile
 import threading
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-FESTIM_GUI_TMP_ENV_VAR = "FESTIM_GUI_TMP"
 LATEST_RUN_RECORD_NAME = "latest-run.json"
 
 
@@ -18,6 +18,7 @@ class ExecutionEvent:
     output_dir: str = ""
     log_path: str = ""
     vtx_paths: list = field(default_factory=list)
+    results_archive_path: str = ""
     return_code: int | None = None
 
 
@@ -29,13 +30,7 @@ class ActiveRun:
 
 
 def resolve_run_root() -> Path:
-    configured_root = os.environ.get(FESTIM_GUI_TMP_ENV_VAR)
-    run_root = (
-        Path(configured_root).expanduser()
-        if configured_root
-        else Path(tempfile.gettempdir())
-    )
-    run_root.mkdir(parents=True, exist_ok=True)
+    run_root = Path(tempfile.gettempdir())
 
     if not os.access(run_root, os.W_OK | os.X_OK):
         msg = f"Run root is not writable: {run_root}"
@@ -48,12 +43,14 @@ def write_latest_run_record(
     output_dir: Path,
     log_path: Path,
     vtx_paths: list[str],
+    results_archive_path: str,
     return_code: int | None,
 ) -> None:
     record = {
         "output_dir": str(output_dir),
         "log_path": str(log_path),
         "vtx_paths": vtx_paths,
+        "results_archive_path": results_archive_path,
         "return_code": return_code,
     }
     (resolve_run_root() / LATEST_RUN_RECORD_NAME).write_text(
@@ -161,11 +158,13 @@ class ScriptExecutionManager:
                 run.process.stdout.close()
 
             vtx_paths = find_vtx_dirs(run.output_dir) if return_code == 0 else []
+            results_archive_path = create_results_archive(run.output_dir, vtx_paths)
             if return_code is not None:
                 write_latest_run_record(
                     output_dir=run.output_dir,
                     log_path=run.log_path,
                     vtx_paths=vtx_paths,
+                    results_archive_path=results_archive_path,
                     return_code=return_code,
                 )
 
@@ -175,6 +174,7 @@ class ScriptExecutionManager:
                     output_dir=str(run.output_dir),
                     log_path=str(run.log_path),
                     vtx_paths=vtx_paths,
+                    results_archive_path=results_archive_path,
                     return_code=return_code,
                 )
             )
@@ -186,3 +186,17 @@ class ScriptExecutionManager:
 
 def find_vtx_dirs(run_dir: Path) -> list[str]:
     return [str(p) for p in sorted(run_dir.rglob("*.bp")) if p.is_dir()]
+
+
+def create_results_archive(run_dir: Path, vtx_paths: list[str]) -> str:
+    if not vtx_paths:
+        return ""
+
+    archive_path = run_dir / "results.zip"
+    with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for vtx_path in map(Path, vtx_paths):
+            for path in vtx_path.rglob("*"):
+                if path.is_file():
+                    archive.write(path, path.relative_to(run_dir))
+
+    return str(archive_path)

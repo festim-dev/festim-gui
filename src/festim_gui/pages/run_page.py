@@ -1,15 +1,18 @@
 import asyncio
+from pathlib import Path
+from urllib.parse import quote
 
 from trame.app.dataclass import StateDataModel, Sync
 from trame.ui.html import DivLayout
 from trame.widgets import html, xterm
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.execution import ScriptExecutionManager
+from festim_gui.execution import ScriptExecutionManager, resolve_run_root
 from festim_gui.pages.page import Page
 from festim_gui.utils.script_builder import build_script
 
 RUN_LOG_TAIL_MAX_CHARS = 200_000
+RESULTS_ENDPOINT = "festim-results"
 
 RUN_STATUS_METADATA = {
     "idle": ("Idle", "default"),
@@ -32,6 +35,7 @@ class RunPageState(StateDataModel):
     log_tail = Sync(str, "")
     output_dir = Sync(str, "")
     post_processing_available = Sync(bool, False)
+    results_download_url = Sync(str, "")
     return_code = Sync(str, "")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
@@ -48,6 +52,8 @@ class RunPage(Page):
         self._pages = pages
         self._execution = ScriptExecutionManager()
         self._terminal = None  # set by build_ui()
+        self._run_root = resolve_run_root()
+        server.serve[RESULTS_ENDPOINT] = str(self._run_root)
 
         server.controller.on_server_ready.add_task(self._monitor_execution_events)
 
@@ -66,6 +72,7 @@ class RunPage(Page):
             log_tail="",
             output_dir="",
             post_processing_available=False,
+            results_download_url="",
             return_code="",
         )
         self._terminal.clear()
@@ -111,6 +118,13 @@ class RunPage(Page):
                     )
                     if event.return_code == 0:
                         self.config.post_processing_available = bool(event.vtx_paths)
+                        if event.results_archive_path:
+                            relative_path = Path(
+                                event.results_archive_path
+                            ).relative_to(self._run_root)
+                            self.config.results_download_url = (
+                                f"{RESULTS_ENDPOINT}/{quote(relative_path.as_posix())}"
+                            )
                         self._set_run_status("succeeded")
                     else:
                         self._set_run_status("failed")
@@ -154,6 +168,22 @@ class RunPage(Page):
                                         variant="tonal",
                                     )
                                 v3.VSpacer()
+                                with v3.VCol(
+                                    cols="12",
+                                    sm="auto",
+                                    v_if=("run_config.results_download_url",),
+                                ):
+                                    with html.A(
+                                        href=("run_config.results_download_url", ""),
+                                        download="festim-results.zip",
+                                        style="text-decoration: none;",
+                                    ):
+                                        v3.VBtn(
+                                            "Download results",
+                                            color="primary",
+                                            prepend_icon="mdi-download",
+                                            variant="outlined",
+                                        )
                                 with v3.VCol(cols="12", sm="auto"):
                                     v3.VBtn(
                                         "Open post-processing",

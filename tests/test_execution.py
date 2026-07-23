@@ -1,27 +1,25 @@
 import time
+import zipfile
 from pathlib import Path
 
+from festim_gui import execution
 from festim_gui.execution import (
-    FESTIM_GUI_TMP_ENV_VAR,
     ScriptExecutionManager,
     read_latest_run_record,
     resolve_run_root,
 )
 
 
-def test_resolve_run_root_uses_env_var(monkeypatch, tmp_path):
-    run_root = tmp_path / "festim-runs"
-    monkeypatch.setenv(FESTIM_GUI_TMP_ENV_VAR, str(run_root))
+def test_resolve_run_root_uses_system_tempdir(monkeypatch, tmp_path):
+    monkeypatch.setattr(execution.tempfile, "gettempdir", lambda: str(tmp_path))
 
     resolved = resolve_run_root()
 
-    assert resolved == run_root
-    assert resolved.is_dir()
+    assert resolved == tmp_path
 
 
 def test_script_execution_manager_runs_script(monkeypatch, tmp_path):
-    run_root = tmp_path / "festim-runs"
-    monkeypatch.setenv(FESTIM_GUI_TMP_ENV_VAR, str(run_root))
+    monkeypatch.setattr(execution.tempfile, "gettempdir", lambda: str(tmp_path))
 
     manager = ScriptExecutionManager()
     manager.start(
@@ -61,8 +59,7 @@ def test_script_execution_manager_runs_script(monkeypatch, tmp_path):
 
 
 def test_script_execution_manager_records_latest_vtx_output(monkeypatch, tmp_path):
-    run_root = tmp_path / "festim-runs"
-    monkeypatch.setenv(FESTIM_GUI_TMP_ENV_VAR, str(run_root))
+    monkeypatch.setattr(execution.tempfile, "gettempdir", lambda: str(tmp_path))
 
     manager = ScriptExecutionManager()
     manager.start(
@@ -91,5 +88,9 @@ def test_script_execution_manager_records_latest_vtx_output(monkeypatch, tmp_pat
 
     assert finished.return_code == 0
     assert any(p.endswith("out/field_export.bp") for p in finished.vtx_paths)
+    assert Path(finished.results_archive_path).is_file()
+    with zipfile.ZipFile(finished.results_archive_path) as archive:
+        assert archive.namelist() == ["out/field_export.bp/data.0"]
     assert latest_run is not None
     assert latest_run["vtx_paths"] == finished.vtx_paths
+    assert latest_run["results_archive_path"] == finished.results_archive_path
