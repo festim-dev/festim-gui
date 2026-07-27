@@ -26,16 +26,10 @@ Run the application
 Simulation runs
 ----------------------------------------
 
-The Run page can execute the generated FESTIM script in the current Python
-environment.
-
-When running inside the provided Docker image, ``festim`` is installed as part
-of the image build.
-
-When running ``festim-gui`` outside the Docker container, the same assumption
-still applies: the Python environment used to launch ``festim-gui`` must also
-have ``festim`` installed, since the Run page executes the generated script in
-that same environment.
+The Run page uses ``FESTIM_GUI_PYTHON`` to execute generated scripts, falling
+back to the interpreter running ``festim-gui``. The Docker image configures
+this variable automatically. Outside Docker, install ``festim`` in the active
+environment or set the variable to an interpreter that provides it.
 
 Simulation working directories are created under the system temporary
 directory (e.g. ``/tmp``).

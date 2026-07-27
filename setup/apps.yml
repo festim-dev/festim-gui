@@ -12,6 +12,3 @@ trame: # Default app under /index.html
     - --authKey
     - ${secret}
     - --server
-
-festim-gui: # /festim-gui.html
-  app: festim-gui

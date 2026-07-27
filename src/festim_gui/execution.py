@@ -2,6 +2,7 @@ import json
 import os
 import queue
 import subprocess
+import sys
 import tempfile
 import threading
 import zipfile
@@ -97,7 +98,11 @@ class ScriptExecutionManager:
             script_path.write_text(script_text, encoding="utf-8")
 
             process = subprocess.Popen(
-                ["python", "-u", script_path.name],
+                [
+                    os.environ.get("FESTIM_GUI_PYTHON", sys.executable),
+                    "-u",
+                    script_path.name,
+                ],
                 cwd=run_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

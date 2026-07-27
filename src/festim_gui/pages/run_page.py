@@ -146,7 +146,7 @@ class RunPage(Page):
                             v3.VLabel("Run", classes="text-subtitle-2")
 
                             v3.VLabel(
-                                "Run the full generated script in the current Python environment. "
+                                "Run the full generated script in the configured FESTIM environment. "
                                 "The log panel shows a live tail while the full log is written to disk.",
                                 classes="text-body-2 text-medium-emphasis",
                             )

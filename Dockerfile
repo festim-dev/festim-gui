@@ -1,4 +1,4 @@
-FROM kitware/trame:conda
+FROM kitware/trame:conda-glvnd
 
 # Set Python and Vue versions
 ENV TRAME_PYTHON=3.12
@@ -21,6 +21,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libdbus-1-3 \
  && rm -rf /var/lib/apt/lists/*
 
+ENV FESTIM_GUI_PYTHON=/opt/trame/festim-env/bin/python
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
+    && gosu trame-user conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+    && gosu trame-user conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
+    && conda create -y -p /opt/trame/festim-env -c conda-forge \
+        python=3.12 festim matplotlib fenics-dolfinx \
+    && conda clean -afy \
+    && $FESTIM_GUI_PYTHON -c "import festim"
+
 # -------------------------------------------------------------------
 # !!! Using path from root directory !!!
 # -------------------------------------------------------------------
@@ -32,8 +43,5 @@ COPY --chown=trame-user:trame-user . /local-app
 COPY --chown=trame-user:trame-user ./setup /deploy/setup
 # -------------------------------------------------------------------
 
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
-    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
-    && gosu trame-user conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
-    && gosu trame-user conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
-    && /opt/trame/entrypoint.sh build
+RUN /opt/trame/entrypoint.sh build \
+    && $TRAME_VENV/bin/python -c "import festim_gui, wslink"
