@@ -90,7 +90,7 @@ def test_script_execution_manager_records_latest_vtx_output(monkeypatch, tmp_pat
     assert any(p.endswith("out/field_export.bp") for p in finished.vtx_paths)
     assert Path(finished.results_archive_path).is_file()
     with zipfile.ZipFile(finished.results_archive_path) as archive:
-        assert archive.namelist() == ["out/field_export.bp/data.0"]
+        assert archive.namelist() == ["field_export.bp/data.0"]
     assert latest_run is not None
     assert latest_run["vtx_paths"] == finished.vtx_paths
     assert latest_run["results_archive_path"] == finished.results_archive_path

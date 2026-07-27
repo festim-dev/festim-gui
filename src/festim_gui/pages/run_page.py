@@ -1,18 +1,17 @@
 import asyncio
-from pathlib import Path
-from urllib.parse import quote
 
+from aiohttp import web
 from trame.app.dataclass import StateDataModel, Sync
 from trame.ui.html import DivLayout
 from trame.widgets import html, xterm
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.execution import ScriptExecutionManager, resolve_run_root
+from festim_gui.execution import ScriptExecutionManager
 from festim_gui.pages.page import Page
 from festim_gui.utils.script_builder import build_script
 
 RUN_LOG_TAIL_MAX_CHARS = 200_000
-RESULTS_ENDPOINT = "festim-results"
+RESULTS_ENDPOINT = "/festim-results.zip"
 
 RUN_STATUS_METADATA = {
     "idle": ("Idle", "default"),
@@ -35,7 +34,6 @@ class RunPageState(StateDataModel):
     log_tail = Sync(str, "")
     output_dir = Sync(str, "")
     post_processing_available = Sync(bool, False)
-    results_download_url = Sync(str, "")
     return_code = Sync(str, "")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
@@ -52,12 +50,31 @@ class RunPage(Page):
         self._pages = pages
         self._execution = ScriptExecutionManager()
         self._terminal = None  # set by build_ui()
-        self._run_root = resolve_run_root()
-        server.serve[RESULTS_ENDPOINT] = str(self._run_root)
+        self._results_archive_path = None
 
+        server.cli.add_argument("--session")
+        session = server.cli.parse_known_args()[0].session
+        self._results_download_url = (
+            f"/api/{session}{RESULTS_ENDPOINT}" if session else RESULTS_ENDPOINT
+        )
+
+        server.controller.on_server_bind.add(self._bind_routes)
         server.controller.on_server_ready.add_task(self._monitor_execution_events)
 
         self.build_ui()
+
+    def _bind_routes(self, wslink_server) -> None:
+        wslink_server.app.router.add_get(RESULTS_ENDPOINT, self._download_results)
+
+    def _download_results(self, _request):
+        if self._results_archive_path is None:
+            raise web.HTTPNotFound
+        return web.FileResponse(
+            self._results_archive_path,
+            headers={
+                "Content-Disposition": 'attachment; filename="festim-results.zip"'
+            },
+        )
 
     def _set_run_status(self, status: str) -> None:
         label, color = RUN_STATUS_METADATA[status]
@@ -72,9 +89,9 @@ class RunPage(Page):
             log_tail="",
             output_dir="",
             post_processing_available=False,
-            results_download_url="",
             return_code="",
         )
+        self._results_archive_path = None
         self._terminal.clear()
 
     def _sync_terminal_from_state(self) -> None:
@@ -118,13 +135,7 @@ class RunPage(Page):
                     )
                     if event.return_code == 0:
                         self.config.post_processing_available = bool(event.vtx_paths)
-                        if event.results_archive_path:
-                            relative_path = Path(
-                                event.results_archive_path
-                            ).relative_to(self._run_root)
-                            self.config.results_download_url = (
-                                f"{RESULTS_ENDPOINT}/{quote(relative_path.as_posix())}"
-                            )
+                        self._results_archive_path = event.results_archive_path or None
                         self._set_run_status("succeeded")
                     else:
                         self._set_run_status("failed")
@@ -171,11 +182,10 @@ class RunPage(Page):
                                 with v3.VCol(
                                     cols="12",
                                     sm="auto",
-                                    v_if=("run_config.results_download_url",),
+                                    v_if=("run_config.post_processing_available",),
                                 ):
                                     with html.A(
-                                        href=("run_config.results_download_url", ""),
-                                        download="festim-results.zip",
+                                        href=self._results_download_url,
                                         style="text-decoration: none;",
                                     ):
                                         v3.VBtn(

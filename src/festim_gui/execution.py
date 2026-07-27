@@ -202,6 +202,6 @@ def create_results_archive(run_dir: Path, vtx_paths: list[str]) -> str:
         for vtx_path in map(Path, vtx_paths):
             for path in vtx_path.rglob("*"):
                 if path.is_file():
-                    archive.write(path, path.relative_to(run_dir))
+                    archive.write(path, path.relative_to(vtx_path.parent))
 
     return str(archive_path)
