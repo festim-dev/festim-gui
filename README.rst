@@ -85,6 +85,12 @@ Run the image and expose it on port ``8080``:
 
     docker run -it --rm -p 8080:80 festim-gui
 
+For development, you can mount the source code into the container:
+
+.. code-block:: console
+
+    docker run -it --rm -p 8080:80 -v .:/local-app festim-gui
+
 Then open ``http://localhost:8080/`` in your browser.
 
 The Docker image includes ``festim``, so Run page executions work inside the
