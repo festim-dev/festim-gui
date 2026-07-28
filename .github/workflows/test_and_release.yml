@@ -42,25 +42,25 @@ jobs:
 
     defaults:
       run:
-        shell: bash
+        shell: bash -el {0}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+      - name: Set up conda (Python ${{ matrix.python-version }})
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-version: latest
+          activate-environment: festim-gui
           python-version: ${{ matrix.python-version }}
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.8.12"
-          enable-cache: true
-      - name: Install and Run Tests
+          channels: conda-forge
+          conda-remove-defaults: "true"
+      - name: Install Dependencies
         run: |
-          uv sync --dev
-          uv pip install -r tests/requirements.txt
-          uv run pytest -s ./tests
+          conda install --yes paraview pip
+          python -m pip install -e . -r tests/requirements.txt
+      - name: Run Tests
+        run: python -m pytest -s ./tests
 
   release:
     if:
