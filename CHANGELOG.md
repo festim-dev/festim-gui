@@ -2,6 +2,79 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-07-28)
+
+### Bug Fixes
+
+- Add paraview to docker container
+  ([`58a6ae6`](https://github.com/festim-dev/festim-gui/commit/58a6ae6ae4143a04dabf48813b5f01fd3c221310))
+
+- Change execution to use conda env
+  ([`ff034bc`](https://github.com/festim-dev/festim-gui/commit/ff034bc378b7368ee360b759f022b53208be7e8a))
+
+- Fix bp file download
+  ([`4438020`](https://github.com/festim-dev/festim-gui/commit/443802080f7f0f30de96ec4dafee4ab868471b98))
+
+- Fix docker image
+  ([`2ac066f`](https://github.com/festim-dev/festim-gui/commit/2ac066fd4e6f12caef59019d8dd45f7e5aaa5d6b))
+
+- Fix post_processing
+  ([`fadfcff`](https://github.com/festim-dev/festim-gui/commit/fadfcff086ba52f3bb8959bc26eac352d5e0128e))
+
+- Make docker editable install /local-app
+  ([`c7f9dbd`](https://github.com/festim-dev/festim-gui/commit/c7f9dbda64ab97ab26f996932b4b635c5dae989c))
+
+- Make page nav chips change page
+  ([`6abbeac`](https://github.com/festim-dev/festim-gui/commit/6abbeac8a8b7ab6a973076287c79c7ce58eeabdf))
+
+- Rename generated.py to script.py
+  ([`121d7f4`](https://github.com/festim-dev/festim-gui/commit/121d7f42cb08638176f4b242120de3874fc41723))
+
+- **editor**: Make editor read only
+  ([`b1538d6`](https://github.com/festim-dev/festim-gui/commit/b1538d630b34bacfc618b83eefe1fff46bf71367))
+
+### Chores
+
+- Move docker/setup/ to setup/
+  ([`0e2e534`](https://github.com/festim-dev/festim-gui/commit/0e2e534ba5fa648e77f2e23f50f2c5b2cd8c3c86))
+
+### Continuous Integration
+
+- Fix paraview dependency
+  ([`461ecb9`](https://github.com/festim-dev/festim-gui/commit/461ecb96d31aeaa8a2e00462c9dfe85d57404c9e))
+
+- Fix pre-commit failure
+  ([`fab76d0`](https://github.com/festim-dev/festim-gui/commit/fab76d08202f4fc4394029652e34167f336cce25))
+
+- Fix pre-commit issues
+  ([`44baaba`](https://github.com/festim-dev/festim-gui/commit/44baaba666366927c07828be6ef6f001e7f291a3))
+
+- Fix windows test failure
+  ([`cb96c0c`](https://github.com/festim-dev/festim-gui/commit/cb96c0c5b59e0ec89cb0c54400423050d832ab78))
+
+### Features
+
+- Add download button
+  ([`e09e27b`](https://github.com/festim-dev/festim-gui/commit/e09e27b7836d1aedb0e1e1ce572e2a7bc6a98373))
+
+- Add post processing page
+  ([`46106d3`](https://github.com/festim-dev/festim-gui/commit/46106d3937b516b2c9797168e0b086fed5e3214f))
+
+- Add script execution to Run page
+  ([`a2e7677`](https://github.com/festim-dev/festim-gui/commit/a2e76777abdb6fbcbaa9e4f3905d63d7957306c8))
+
+- Add simulation files download button
+  ([`603572e`](https://github.com/festim-dev/festim-gui/commit/603572eb8828ac45d83072fcd1de53d2f11477a0))
+
+- Add trame-xterm to display run logs
+  ([`c7f3df9`](https://github.com/festim-dev/festim-gui/commit/c7f3df913749bc486fa1cf52bf349a8ad6dbd97f))
+
+### Refactoring
+
+- **pages**: Clean page structure
+  ([`7771f04`](https://github.com/festim-dev/festim-gui/commit/7771f04b61b9a0a986773ecf47718855c30d4eda))
+
+
 ## v1.1.0 (2026-05-15)
 
 ### Chores
