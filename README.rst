@@ -116,9 +116,6 @@ The Docker image exposes both modes as separate apps, declared in
 * ``http://localhost:8080/gpu.html`` -- same app launched with ``--gpu``,
   remote rendering.
 
-Both apps are always served; ``gpu.html`` only works if the container can reach
-a GPU.
-
 Running the container with GPUs
 ========================================
 
