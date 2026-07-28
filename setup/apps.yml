@@ -32,4 +32,3 @@ gpu: # GPU enabled app /gpu.html
     - --session
     - ${id}
     - --gpu
-
