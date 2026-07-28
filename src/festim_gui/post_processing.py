@@ -50,6 +50,13 @@ class PostProcessing(TrameApp):
     def __init__(self, server=None, template_name="post-processing"):
         super().__init__(server)
 
+        self.server.cli.add_argument(
+            "--gpu",
+            action="store_true",
+            help="Use GPU for rendering.",
+        )
+        self.use_gpu = self.server.cli.parse_known_args()[0].gpu
+
         pvw.initialize(self.server)
         v3.initialize(self.server)
 
@@ -165,7 +172,11 @@ class PostProcessing(TrameApp):
 
     def view_action(self, action):
         getattr(self.view, action)()
-        self.ctx.view.reset_camera()
+        if self.use_gpu:
+            self.ctx.view.reset_camera()
+        else:
+            simple.ResetCamera(self.view)
+            self.ctx.view.push_camera()
 
     def reset_camera(self):
         self.ctx.view.reset_camera()
@@ -239,12 +250,17 @@ class PostProcessing(TrameApp):
                 classes="flex-grow-1",
                 style="position: relative; width: 100%; min-height: 0;",
             ):
-                pvw.VtkRemoteView(
-                    self.view,
-                    interactive_ratio=1,
-                    ctx_name="view",
-                    style="width: 100%; height: 100%;",
-                )
+                if self.use_gpu:
+                    pvw.VtkRemoteView(
+                        self.view,
+                        interactive_ratio=1,
+                        ctx_name="view",
+                    )
+                else:
+                    pvw.VtkLocalView(
+                        self.view,
+                        ctx_name="view",
+                    )
                 with html.Div(
                     style=(
                         "{"

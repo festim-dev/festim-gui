@@ -14,3 +14,22 @@ trame: # Default app under /index.html
     - --server
     - --session
     - ${id}
+
+gpu: # GPU enabled app /gpu.html
+  cmd:
+    - /opt/paraview/bin/pvpython
+    - --venv
+    - /deploy/server/venv
+    - -m
+    - festim_gui.app
+    - --host
+    - ${host}
+    - --port
+    - ${port}
+    - --authKey
+    - ${secret}
+    - --server
+    - --session
+    - ${id}
+    - --gpu
+

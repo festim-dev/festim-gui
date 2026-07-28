@@ -98,6 +98,41 @@ container without any extra local FESTIM installation.
 
 Docker setup files are located under ``setup/``.
 
+GPU support
+----------------------------------------
+
+The post-processing view can render either on the client or on the server:
+
+* **Local rendering (default)** -- geometry is sent to the browser and rendered
+  in browser. No GPU is needed on the server.
+* **Remote rendering (GPU)** -- ParaView renders on the server and streams
+  images to the browser. This requires a GPU available to the process, and is
+  enabled with the ``--gpu`` flag.
+
+The Docker image exposes both modes as separate apps, declared in
+``setup/apps.yml``:
+
+* ``http://localhost:8080/index.html`` -- default app, local rendering.
+* ``http://localhost:8080/gpu.html`` -- same app launched with ``--gpu``,
+  remote rendering.
+
+Both apps are always served; ``gpu.html`` only works if the container can reach
+a GPU.
+
+Running the container with GPUs
+========================================
+
+Install the `NVIDIA Container Toolkit
+<https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html>`_
+on the host, then pass the GPUs to the container with ``--gpus``:
+
+.. code-block:: console
+
+    docker run -it --rm --gpus all -p 8080:80 festim-gui
+
+Then open ``http://localhost:8080/gpu.html`` in your browser.
+
+
 Professional Support
 ----------------------------------------
 
