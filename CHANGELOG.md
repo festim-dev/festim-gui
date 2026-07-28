@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-07-28)
+
+### Continuous Integration
+
+- Fix formatting
+  ([`890aa56`](https://github.com/festim-dev/festim-gui/commit/890aa568887bc7cef75395b9f46537c7beabcd2f))
+
+### Documentation
+
+- Fix readme
+  ([`46fa822`](https://github.com/festim-dev/festim-gui/commit/46fa8220b0b300e7439d9e55ea362993be9a1496))
+
+### Features
+
+- Add gpu/local render support
+  ([`265ba31`](https://github.com/festim-dev/festim-gui/commit/265ba319d3bf765a7def160605ca6bb8e6c9dea5))
+
+
 ## v1.2.0 (2026-07-28)
 
 ### Bug Fixes
