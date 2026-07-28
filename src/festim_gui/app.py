@@ -3,10 +3,10 @@ from urllib.parse import quote
 from trame.app import TrameApp
 from trame.decorators import change
 from trame.ui.vuetify3 import VAppLayout
-from trame.widgets import client, html
+from trame.widgets import client
 from trame.widgets import vuetify3 as v3
 
-from festim_gui.components import Navigation, PageNavigationBar, ScriptEditor
+from festim_gui.components import Navigation, ScriptEditor
 from festim_gui.pages import create_pages
 from festim_gui.post_processing import PostProcessing
 from festim_gui.utils.script_builder import build_script
@@ -76,33 +76,28 @@ class FestimGUI(TrameApp):
 
     def _build_ui(self, *_args, **_kwargs):
         with VAppLayout(self.server):
-            with v3.VContainer(fluid=True, classes="pa-4 fill-height"):
-                with v3.VRow(classes="fill-height"):
+            with v3.VContainer(fluid=True, classes="pa-4"):
+                Navigation(
+                    pages=self.pages,
+                    on_prev=self.previous_page,
+                    on_next=self.next_page,
+                )
+
+                with v3.VRow(align="start"):
                     with v3.VCol(
                         cols="12",
                         md="6",
-                        classes="d-flex flex-column",
-                        style="height: calc(100vh - 32px); min-height: 0;",
                     ):
-
-                        with html.Div(
-                            classes="flex-grow-1 min-h-0 overflow-y-auto pr-1"
-                        ):
-                            PageNavigationBar(self.pages)
-                            client.ServerTemplate(name=("page_name", self.pages[0].id))
-
-                        with html.Div(classes="pt-3 mt-auto"):
-                            Navigation(
-                                total_pages=len(self.pages),
-                                on_prev=self.previous_page,
-                                on_next=self.next_page,
-                            )
+                        client.ServerTemplate(
+                            name=("page_name", self.pages[0].id),
+                            classes="d-block w-100",
+                        )
 
                     with v3.VCol(
                         cols="12",
                         md="6",
                         classes="d-flex flex-column",
-                        style="height: calc(100vh - 32px); min-height: 0;",
+                        style="height: calc(100vh - 100px - 28px); min-height: 0;",
                     ):
                         ScriptEditor()
 
