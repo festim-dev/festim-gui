@@ -33,7 +33,6 @@ class RunPageState(StateDataModel):
     is_active = Sync(bool, False)
     log_tail = Sync(str, "")
     output_dir = Sync(str, "")
-    post_processing_available = Sync(bool, False)
     return_code = Sync(str, "")
     status_label = Sync(str, RUN_STATUS_METADATA["idle"][0])
     status_color = Sync(str, RUN_STATUS_METADATA["idle"][1])
@@ -51,6 +50,10 @@ class RunPage(Page):
         self._execution = ScriptExecutionManager()
         self._terminal = None  # set by build_ui()
         self._results_archive_path = None
+
+        # Shared with the app layout, which swaps the script editor for the
+        # post-processing view once a run produces field data.
+        self.state.vtx_paths = []
 
         server.cli.add_argument("--session")
         session = server.cli.parse_known_args()[0].session
@@ -88,9 +91,9 @@ class RunPage(Page):
             is_active=False,
             log_tail="",
             output_dir="",
-            post_processing_available=False,
             return_code="",
         )
+        self.state.vtx_paths = []
         self._results_archive_path = None
         self._terminal.clear()
 
@@ -134,11 +137,13 @@ class RunPage(Page):
                         str(event.return_code) if event.return_code is not None else ""
                     )
                     if event.return_code == 0:
-                        self.config.post_processing_available = bool(event.vtx_paths)
                         self._results_archive_path = event.results_archive_path or None
                         self._set_run_status("succeeded")
                     else:
                         self._set_run_status("failed")
+
+                    with self.state:
+                        self.state.vtx_paths = event.vtx_paths
 
             if log_text:
                 self.config.log_tail = _append_log_tail(self.config.log_tail, log_text)
@@ -182,7 +187,7 @@ class RunPage(Page):
                                 with v3.VCol(
                                     cols="12",
                                     sm="auto",
-                                    v_if=("run_config.post_processing_available",),
+                                    v_if=("vtx_paths.length",),
                                 ):
                                     with html.A(
                                         href=self._results_download_url,
@@ -194,18 +199,6 @@ class RunPage(Page):
                                             prepend_icon="mdi-download",
                                             variant="outlined",
                                         )
-                                with v3.VCol(cols="12", sm="auto"):
-                                    v3.VBtn(
-                                        "Open post-processing",
-                                        color="primary",
-                                        prepend_icon="mdi-open-in-new",
-                                        variant="flat",
-                                        click="window.open('?ui=post-processing', '_blank', 'noopener,noreferrer')",
-                                        disabled=(
-                                            "!run_config.post_processing_available",
-                                            True,
-                                        ),
-                                    )
 
                             with html.Div(
                                 classes="d-flex flex-column ga-1",

@@ -8,7 +8,11 @@ from trame.widgets import vuetify3 as v3
 
 from festim_gui.components import Navigation, ScriptEditor
 from festim_gui.pages import create_pages
-from festim_gui.post_processing import PostProcessing
+from festim_gui.post_processing import (
+    RESULTS_PANEL_VISIBLE,
+    PostProcessing,
+    ResultsPanel,
+)
 from festim_gui.utils.script_builder import build_script
 
 
@@ -19,6 +23,7 @@ class FestimGUI(TrameApp):
         self.state.trame__title = "FESTIM Script Modeler"
         self.pages = create_pages(self.server)
 
+        self.state.panel_view_mode = "script"
         self.post_processing = PostProcessing(self.server)
 
         for page in self.pages:
@@ -74,6 +79,12 @@ class FestimGUI(TrameApp):
     def on_script_view_mode_change(self, **_kwargs):
         self._refresh_script()
 
+    @change("vtx_paths")
+    def on_results_change(self, vtx_paths, **_kwargs):
+        self.state.panel_view_mode = "results" if vtx_paths else "script"
+        if vtx_paths:
+            self.post_processing.load_file(vtx_paths[0])
+
     def _build_ui(self, *_args, **_kwargs):
         with VAppLayout(self.server):
             with v3.VContainer(fluid=True, classes="pa-4"):
@@ -99,7 +110,8 @@ class FestimGUI(TrameApp):
                         classes="d-flex flex-column",
                         style="height: calc(100vh - 100px - 28px); min-height: 0;",
                     ):
-                        ScriptEditor()
+                        ResultsPanel(v_if=RESULTS_PANEL_VISIBLE)
+                        ScriptEditor(v_else=True)
 
 
 def main():

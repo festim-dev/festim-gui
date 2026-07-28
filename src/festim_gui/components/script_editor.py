@@ -1,6 +1,8 @@
 from trame.widgets import code, html
 from trame.widgets import vuetify3 as v3
 
+from festim_gui.post_processing import ResultsViewToggle
+
 
 class ScriptEditor(v3.VCard):
     def __init__(self, **kwargs):
@@ -39,6 +41,7 @@ class ScriptEditor(v3.VCard):
                 ):
                     v3.VBtn("Snippet", value="snippet")
                     v3.VBtn("Full", value="full")
+                ResultsViewToggle()
             with v3.VCardText(classes="flex-grow-1 px-3 pb-3"):
                 with v3.VSheet(
                     border=True,
