@@ -8,6 +8,7 @@ from trame.ui.html import DivLayout
 from trame.widgets import client, html
 from trame.widgets import paraview as pvw
 from trame.widgets import vuetify3 as v3
+from vtkmodules.vtkRenderingAnnotation import vtkScalarBarActor
 
 RESULTS_AVAILABLE = "page_name === 'run' && vtx_paths.length"
 RESULTS_PANEL_VISIBLE = f"{RESULTS_AVAILABLE} && panel_view_mode === 'results'"
@@ -79,6 +80,14 @@ class PostProcessing(TrameApp):
             OrientationAxesVisibility=1,
             Background=[0.12, 0.12, 0.12],
         )
+        self.scalar_bar = vtkScalarBarActor()
+        self.scalar_bar.SetWidth(0.1)
+        self.scalar_bar.SetHeight(0.5)
+        self.scalar_bar.SetNumberOfLabels(4)
+        self.scalar_bar.SetTitle("")
+        self.scalar_bar.SetVisibility(False)
+        renderer = self.view.GetRenderWindow().GetRenderers().GetFirstRenderer()
+        renderer.AddViewProp(self.scalar_bar)
 
     def _time_controls_width(self, time_count):
         return f"min(100%, calc({max(time_count, 1)} * 5px + 24rem))"
@@ -88,6 +97,7 @@ class PostProcessing(TrameApp):
         if not file_path.exists():
             if self.representation is not None:
                 self.representation.Visibility = 0
+            self.scalar_bar.SetVisibility(False)
             return
 
         if self.reader is None:
@@ -120,11 +130,12 @@ class PostProcessing(TrameApp):
         self._apply_time(0)
 
         self.state.pv_color_options = options
-        if self.state.pv_color_by not in {option["value"] for option in options}:
-            self.state.pv_color_by = None
+        color_values = {option["value"] for option in options}
+        if self.state.pv_color_by not in color_values:
+            self.state.pv_color_by = options[0]["value"] if options else None
 
         self.representation.Visibility = 1
-        self.representation.SetScalarBarVisibility(self.view, True)
+        self._set_color_by(self.state.pv_color_by)
 
         self.view.ResetCamera()
         if self.ctx.view:
@@ -157,13 +168,22 @@ class PostProcessing(TrameApp):
         if self.representation is None:
             return
 
-        if pv_color_by is None:
-            self.representation.ColorBy(("POINTS", None))
-        else:
-            self.representation.ColorBy(pv_color_by.split(":::"))
+        self._set_color_by(pv_color_by)
 
         if self.ctx.view:
             self.ctx.view.update()
+
+    def _set_color_by(self, color_by):
+        self.scalar_bar.SetVisibility(bool(color_by))
+        if not color_by:
+            self.representation.ColorBy(None)
+            return
+
+        association, array_name = color_by.split(":::", 1)
+        self.representation.ColorBy((association, array_name))
+        self.representation.RescaleTransferFunctionToDataRange(True, False)
+        lookup_table = simple.GetColorTransferFunction(array_name)
+        self.scalar_bar.SetLookupTable(lookup_table.GetClientSideObject())
 
     @change("pv_play")
     def _on_play(self, pv_play, **_):
